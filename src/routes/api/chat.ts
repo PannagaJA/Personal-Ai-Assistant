@@ -82,29 +82,38 @@ export async function handleChatPost(request: Request) {
 
   const tools = registry.toVercelTools(toolCtx);
 
-  logger.info("ai_request", "Starting streamText execution", { threadId }, userId);
+  try {
+    logger.info("ai_request", "Starting streamText execution", { threadId }, userId);
 
-  const result = streamText({
-    model,
-    stopWhen: stepCountIs(12),
-    tools,
-    system: systemPrompt(aiContext),
-    messages: await convertToModelMessages(messages),
-  });
+    const result = streamText({
+      model,
+      stopWhen: stepCountIs(12),
+      tools,
+      system: systemPrompt(aiContext),
+      messages: await convertToModelMessages(messages),
+    });
 
-  return result.toUIMessageStreamResponse({
-    originalMessages: messages,
-    onFinish: async ({ responseMessage }) => {
-      if (!responseMessage) return;
-      const { error } = await supabase.from("chat_messages").insert({
-        thread_id: threadId,
-        user_id: userId,
-        role: "assistant",
-        parts: responseMessage.parts as unknown as never,
-        text_content: messageText(responseMessage),
-        client_message_id: responseMessage.id ?? null,
-      });
-      if (error) logger.error("database", "Failed to save assistant message", { error: error.message }, userId);
-    },
-  });
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      onFinish: async ({ responseMessage }) => {
+        if (!responseMessage) return;
+        const { error } = await supabase.from("chat_messages").insert({
+          thread_id: threadId,
+          user_id: userId,
+          role: "assistant",
+          parts: responseMessage.parts as unknown as never,
+          text_content: messageText(responseMessage),
+          client_message_id: responseMessage.id ?? null,
+        });
+        if (error) logger.error("database", "Failed to save assistant message", { error: error.message }, userId);
+      },
+    });
+  } catch (err: any) {
+    const errorMsg = err?.message || String(err);
+    logger.error("provider", "AI stream execution error", { error: errorMsg }, userId);
+    return new Response(JSON.stringify({ error: errorMsg }), {
+      status: err?.statusCode || 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }

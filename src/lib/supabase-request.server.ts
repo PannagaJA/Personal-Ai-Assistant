@@ -6,8 +6,7 @@ function isNewSupabaseApiKey(value: string) {
 }
 
 /**
- * Creates a Supabase client that acts as the signed-in user for a raw HTTP
- * server route (server functions should use `requireSupabaseAuth` instead).
+ * Creates a Supabase client that acts as the signed-in user for a raw HTTP route.
  * Returns null when the bearer token is missing or invalid.
  */
 export async function getUserClientFromRequest(
@@ -18,8 +17,13 @@ export async function getUserClientFromRequest(
   const token = authHeader.slice("Bearer ".length);
   if (token.split(".").length !== 3) return null;
 
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  const url = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"];
+  const key =
+    process.env["SUPABASE_ANON_KEY"] ||
+    process.env["VITE_SUPABASE_ANON_KEY"] ||
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+
   if (!url || !key) throw new Error("Missing Supabase server environment variables");
 
   const supabase = createClient<Database>(url, key, {
@@ -38,8 +42,8 @@ export async function getUserClientFromRequest(
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await supabase.auth.getClaims(token);
-  if (error || !data?.claims?.sub) return null;
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
 
-  return { supabase, userId: data.claims.sub as string };
+  return { supabase, userId: user.id };
 }
