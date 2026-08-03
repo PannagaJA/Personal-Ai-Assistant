@@ -107,6 +107,7 @@ export async function handleChatPost(request: Request) {
 
     const result = streamText({
       model,
+      maxOutputTokens: 2048,
       stopWhen: stepCountIs(12),
       tools,
       system: systemPrompt(aiContext),

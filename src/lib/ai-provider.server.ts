@@ -7,7 +7,7 @@ export type SupportedAIProvider = "openrouter" | "google" | "openai";
 
 /**
  * Returns a standardized Vercel AI SDK LanguageModel based on configured environment variables.
- * Uses OpenRouter auto-routing model selection for guaranteed model availability.
+ * Uses OpenRouter model routing for fast and efficient tool calling execution.
  */
 export function getAIModel(preferredProvider?: SupportedAIProvider): LanguageModel {
   const openrouterKey = process.env["OPENROUTER_API_KEY"];
@@ -24,9 +24,12 @@ export function getAIModel(preferredProvider?: SupportedAIProvider): LanguageMod
       name: "openrouter",
       apiKey: openrouterKey,
       baseURL: "https://openrouter.ai/api/v1",
+      headers: {
+        "HTTP-Referer": "https://personal-ai-assistant.local",
+        "X-Title": "Personal AI Assistant",
+      },
     });
-    // openrouter/auto dynamically routes to currently available models
-    return openrouter("openrouter/auto") as unknown as LanguageModel;
+    return openrouter("google/gemini-2.5-flash") as unknown as LanguageModel;
   }
 
   if (preferredProvider === "openai" || (!geminiKey && openaiKey)) {
