@@ -159,7 +159,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
           {/* Left Column: Tasks & Unread Email Widget */}
           <div className="space-y-6">
             {/* Priorities / Tasks */}
