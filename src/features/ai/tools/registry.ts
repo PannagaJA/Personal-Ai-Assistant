@@ -28,15 +28,18 @@ class ToolRegistry {
   private tools: Map<string, AITool> = new Map();
 
   register<TParams extends z.ZodType>(tool: AITool<TParams>): void {
-    if (this.tools.has(tool.id)) {
-      logger.warn("system", `Overwriting tool registration for ${tool.id}`);
+    const sanitizedId = tool.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+    if (this.tools.has(sanitizedId)) {
+      logger.warn("system", `Overwriting tool registration for ${sanitizedId}`);
     }
-    this.tools.set(tool.id, tool as unknown as AITool);
-    logger.info("system", `Registered AI tool: ${tool.id}`);
+    const cleanTool = { ...tool, id: sanitizedId };
+    this.tools.set(sanitizedId, cleanTool as unknown as AITool);
+    logger.info("system", `Registered AI tool: ${sanitizedId}`);
   }
 
   getTool(id: string): AITool | undefined {
-    return this.tools.get(id);
+    const sanitizedId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+    return this.tools.get(sanitizedId);
   }
 
   getAllTools(): AITool[] {
@@ -50,17 +53,18 @@ class ToolRegistry {
     const vercelToolsMap: Record<string, VercelTool> = {};
 
     for (const [id, toolDef] of this.tools.entries()) {
-      vercelToolsMap[id] = vercelTool({
+      const sanitizedId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+      vercelToolsMap[sanitizedId] = vercelTool({
         description: toolDef.description,
         inputSchema: toolDef.parameters,
         execute: async (params: unknown) => {
           const startTime = Date.now();
-          logger.info("tool_call", `Executing tool ${id}`, { params }, context.userId);
+          logger.info("tool_call", `Executing tool ${sanitizedId}`, { params }, context.userId);
           try {
             const result = await toolDef.execute(params as never, context);
             logger.info(
               "tool_call",
-              `Tool ${id} completed in ${Date.now() - startTime}ms`,
+              `Tool ${sanitizedId} completed in ${Date.now() - startTime}ms`,
               { success: result.success },
               context.userId,
             );
@@ -69,7 +73,7 @@ class ToolRegistry {
             const errorMessage = err instanceof Error ? err.message : String(err);
             logger.error(
               "tool_call",
-              `Tool ${id} failed: ${errorMessage}`,
+              `Tool ${sanitizedId} failed: ${errorMessage}`,
               { error: errorMessage },
               context.userId,
             );

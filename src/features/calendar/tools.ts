@@ -9,7 +9,7 @@ import {
 } from "./utils";
 
 export const listTodayEventsTool: AITool = {
-  id: "calendar.list_today",
+  id: "calendar_list_today",
   name: "List Today's Calendar Events",
   description: "Retrieve all scheduled meetings and calendar events for today.",
   parameters: z.object({}),
@@ -26,7 +26,7 @@ export const listTodayEventsTool: AITool = {
 };
 
 export const listTomorrowEventsTool: AITool = {
-  id: "calendar.list_tomorrow",
+  id: "calendar_list_tomorrow",
   name: "List Tomorrow's Calendar Events",
   description: "Retrieve all scheduled meetings and calendar events for tomorrow.",
   parameters: z.object({}),
@@ -45,7 +45,7 @@ export const listTomorrowEventsTool: AITool = {
 };
 
 export const listWeekEventsTool: AITool = {
-  id: "calendar.list_week",
+  id: "calendar_list_week",
   name: "List This Week's Calendar Events",
   description: "Retrieve all scheduled meetings and calendar events for the current week.",
   parameters: z.object({}),
@@ -62,7 +62,7 @@ export const listWeekEventsTool: AITool = {
 };
 
 export const searchCalendarEventsTool: AITool = {
-  id: "calendar.search",
+  id: "calendar_search",
   name: "Search Calendar Events",
   description: "Search Google Calendar events by keyword query (title, description, location).",
   parameters: z.object({
@@ -83,7 +83,7 @@ export const searchCalendarEventsTool: AITool = {
 };
 
 export const createCalendarEventTool: AITool = {
-  id: "calendar.create",
+  id: "calendar_create",
   name: "Create Calendar Event",
   description: "Schedule or create a new meeting or event in Google Calendar.",
   parameters: z.object({
@@ -106,7 +106,7 @@ export const createCalendarEventTool: AITool = {
 };
 
 export const updateCalendarEventTool: AITool = {
-  id: "calendar.update",
+  id: "calendar_update",
   name: "Update Calendar Event",
   description: "Update an existing Google Calendar event by ID.",
   parameters: z.object({
@@ -128,7 +128,7 @@ export const updateCalendarEventTool: AITool = {
 };
 
 export const deleteCalendarEventTool: AITool = {
-  id: "calendar.delete",
+  id: "calendar_delete",
   name: "Delete Calendar Event",
   description: "Delete an event from Google Calendar by event ID.",
   parameters: z.object({
@@ -145,7 +145,7 @@ export const deleteCalendarEventTool: AITool = {
 };
 
 export const findFreeTimeTool: AITool = {
-  id: "calendar.find_free_time",
+  id: "calendar_find_free_time",
   name: "Find Free Time",
   description: "Find available free time slots in the user's schedule for a target date.",
   parameters: z.object({
@@ -170,7 +170,7 @@ export const findFreeTimeTool: AITool = {
 };
 
 export const detectConflictsTool: AITool = {
-  id: "calendar.detect_conflicts",
+  id: "calendar_detect_conflicts",
   name: "Detect Calendar Conflicts",
   description: "Check if a proposed meeting slot conflicts with existing meetings.",
   parameters: z.object({
@@ -193,7 +193,7 @@ export const detectConflictsTool: AITool = {
 };
 
 export const getNextEventTool: AITool = {
-  id: "calendar.next_event",
+  id: "calendar_next_event",
   name: "Get Next Upcoming Meeting",
   description: "Retrieve details of the user's immediate next upcoming meeting today.",
   parameters: z.object({}),

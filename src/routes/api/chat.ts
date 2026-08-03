@@ -18,6 +18,24 @@ function messageText(message: UIMessage) {
     .trim();
 }
 
+function sanitizeModelMessages(messages: any[]) {
+  return messages.map((msg) => {
+    if (Array.isArray(msg.content)) {
+      const sanitizedContent = msg.content.map((part: any) => {
+        if ((part.type === "tool-call" || part.type === "tool-result") && part.toolName) {
+          return {
+            ...part,
+            toolName: part.toolName.replace(/[^a-zA-Z0-9_-]/g, "_"),
+          };
+        }
+        return part;
+      });
+      return { ...msg, content: sanitizedContent };
+    }
+    return msg;
+  });
+}
+
 export async function handleChatPost(request: Request) {
   const auth = await getUserClientFromRequest(request);
   if (!auth) return new Response("Unauthorized", { status: 401 });
@@ -81,6 +99,8 @@ export async function handleChatPost(request: Request) {
   };
 
   const tools = registry.toVercelTools(toolCtx);
+  const rawModelMessages = await convertToModelMessages(messages);
+  const modelMessages = sanitizeModelMessages(rawModelMessages);
 
   try {
     logger.info("ai_request", "Starting streamText execution", { threadId }, userId);
@@ -90,7 +110,7 @@ export async function handleChatPost(request: Request) {
       stopWhen: stepCountIs(12),
       tools,
       system: systemPrompt(aiContext),
-      messages: await convertToModelMessages(messages),
+      messages: modelMessages,
     });
 
     return result.toUIMessageStreamResponse({

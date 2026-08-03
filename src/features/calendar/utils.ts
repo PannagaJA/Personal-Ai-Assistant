@@ -10,8 +10,8 @@ export function formatEventTime(evt: CalendarEvent): string {
   const start = new Date(evt.start.dateTime);
   const end = new Date(evt.end.dateTime);
 
-  const startStr = start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const endStr = end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const startStr = start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
+  const endStr = end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
   return `${startStr} - ${endStr}`;
 }
 
