@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/services/logger";
 import { GoogleCalendarService } from "@/features/calendar/services.server";
-import type { CalendarEvent } from "@/features/calendar/types";
+import type { CalendarEvent, FreeTimeSlot } from "@/features/calendar/types";
+import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 
 export interface AIContext {
   userId: string;
@@ -11,6 +12,7 @@ export interface AIContext {
   pendingTasks: Array<{ title: string; priority: string; due_at: string | null }>;
   todaysEvents: CalendarEvent[];
   nextMeeting?: CalendarEvent;
+  freeSlotsToday?: FreeTimeSlot[];
 }
 
 export async function buildAIContext(
@@ -20,8 +22,8 @@ export async function buildAIContext(
 ): Promise<AIContext> {
   const nowObj = new Date();
   const now = nowObj.toISOString();
-  const endOfDay = new Date(nowObj);
-  endOfDay.setUTCHours(23, 59, 59, 999);
+  const startOfDay = getStartOfDayIso(nowObj);
+  const endOfDay = getEndOfDayIso(nowObj);
 
   try {
     const like = userQuery ? `%${userQuery}%` : "";
@@ -47,10 +49,20 @@ export async function buildAIContext(
             .eq("user_id", userId)
             .order("created_at", { ascending: false })
             .limit(5),
-      GoogleCalendarService.listEvents(supabase, userId, now, endOfDay.toISOString()).catch(() => []),
+      GoogleCalendarService.listEvents(supabase, userId, startOfDay, endOfDay).catch(() => []),
     ]);
 
-    const nextMeeting = calendarEvents.find((evt) => evt.start.dateTime && new Date(evt.start.dateTime) > nowObj);
+    const nextMeeting = calendarEvents.find(
+      (evt) => evt.start.dateTime && new Date(evt.start.dateTime) > nowObj,
+    );
+
+    const freeSlotsToday = await GoogleCalendarService.findFreeTime(
+      supabase,
+      userId,
+      now,
+      endOfDay,
+      30,
+    ).catch(() => []);
 
     return {
       userId,
@@ -60,6 +72,7 @@ export async function buildAIContext(
       pendingTasks: tasksRes.data ?? [],
       todaysEvents: calendarEvents,
       ...(nextMeeting ? { nextMeeting } : {}),
+      freeSlotsToday,
     };
   } catch (err) {
     logger.error("ai_request", "Failed to build AI context", { error: String(err) }, userId);
@@ -70,6 +83,7 @@ export async function buildAIContext(
       relevantMemories: [],
       pendingTasks: [],
       todaysEvents: [],
+      freeSlotsToday: [],
     };
   }
 }

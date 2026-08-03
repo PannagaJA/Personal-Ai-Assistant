@@ -1,4 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import { GoogleCalendarService } from "@/features/calendar/services.server";
+import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
+import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 
 export type TaskRow = {
   id: string;
@@ -31,7 +34,10 @@ export async function getWorkspace() {
   if (!user) throw new Error("Unauthorized");
   const userId = user.id;
 
-  const [profile, tasks, memories, threads] = await Promise.all([
+  const startToday = getStartOfDayIso();
+  const endToday = getEndOfDayIso();
+
+  const [profile, tasks, memories, threads, calendarEvents] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -52,15 +58,55 @@ export async function getWorkspace() {
       .eq("user_id", userId)
       .order("updated_at", { ascending: false })
       .limit(20),
+    GoogleCalendarService.listEvents(supabase, userId, startToday, endToday).catch(() => []),
   ]);
+
+  const now = new Date();
+  const nextMeeting = calendarEvents.find(
+    (e) => e.start.dateTime && new Date(e.start.dateTime) > now
+  ) ?? null;
+
+  const freeTimeToday = await GoogleCalendarService.findFreeTime(
+    supabase,
+    userId,
+    now.toISOString(),
+    endToday,
+    30
+  ).catch(() => []);
 
   return {
     profile: profile.data ?? null,
     tasks: (tasks.data ?? []) as TaskRow[],
     memories: (memories.data ?? []) as MemoryRow[],
     threads: (threads.data ?? []) as ThreadRow[],
-    todaysEvents: [],
+    todaysEvents: calendarEvents,
+    nextMeeting,
+    freeTimeToday,
   };
+}
+
+export async function fetchCalendarEvents(timeMin: string, timeMax: string, q?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleCalendarService.listEvents(supabase, user.id, timeMin, timeMax, q);
+}
+
+export async function createCalendarEvent(input: CreateEventInput) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleCalendarService.createEvent(supabase, user.id, input);
+}
+
+export async function updateCalendarEvent(input: UpdateEventInput) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleCalendarService.updateEvent(supabase, user.id, input);
+}
+
+export async function deleteCalendarEvent(eventId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleCalendarService.deleteEvent(supabase, user.id, eventId);
 }
 
 export async function listThreads() {
@@ -230,7 +276,10 @@ export async function generateDailyBrief() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const [tasks, memories] = await Promise.all([
+  const startToday = getStartOfDayIso();
+  const endToday = getEndOfDayIso();
+
+  const [tasks, memories, calendarEvents] = await Promise.all([
     supabase
       .from("tasks")
       .select("title, priority, status, due_at")
@@ -243,12 +292,26 @@ export async function generateDailyBrief() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(15),
+    GoogleCalendarService.listEvents(supabase, user.id, startToday, endToday).catch(() => []),
   ]);
 
   const openTasks = tasks.data ?? [];
   const memoryList = memories.data ?? [];
 
   let brief = "### Daily Brief\n\n";
+  if (calendarEvents.length > 0) {
+    brief += `**Today's Schedule (${calendarEvents.length} meetings):**\n`;
+    calendarEvents.forEach((evt) => {
+      const time = evt.start.dateTime
+        ? new Date(evt.start.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "All Day";
+      brief += `- [${time}] ${evt.summary}${evt.location ? ` @ ${evt.location}` : ""}\n`;
+    });
+    brief += "\n";
+  } else {
+    brief += "No meetings scheduled for today.\n\n";
+  }
+
   if (openTasks.length > 0) {
     brief += `**Open Tasks (${openTasks.length}):**\n`;
     openTasks.forEach((t) => {

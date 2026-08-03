@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import {
   ArrowUpRight,
   Brain,
+  Calendar as CalendarIcon,
   CheckCircle2,
   Circle,
+  Clock,
   Loader2,
   Plus,
   Sparkles,
@@ -26,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatEventTime } from "@/features/calendar/utils";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -83,6 +86,9 @@ export default function Dashboard() {
   const doneToday = tasks.filter((task) => task.status === "done").length;
   const memories = workspace.data?.memories ?? [];
   const threads = workspace.data?.threads ?? [];
+  const todaysEvents = workspace.data?.todaysEvents ?? [];
+  const nextMeeting = workspace.data?.nextMeeting;
+  const freeTimeToday = workspace.data?.freeTimeToday ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -100,17 +106,26 @@ export default function Dashboard() {
               {name ? `, ${name}` : ""}.
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {openTasks.length} open · {doneToday} completed · {memories.length} memories held
+              {todaysEvents.length} meetings today · {openTasks.length} open tasks · {doneToday} completed
             </p>
           </div>
-          <Button asChild>
-            <Link to="/chat">
-              Ask Jarvis
-              <ArrowUpRight className="size-4" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/calendar">
+                <CalendarIcon className="size-4" />
+                Calendar
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/chat">
+                Ask Jarvis
+                <ArrowUpRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
         </motion.header>
 
+        {/* Daily Briefing Card */}
         <section className="glass-panel mt-8 rounded-xl p-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -129,13 +144,14 @@ export default function Dashboard() {
           </div>
           <div className="mt-3 text-sm whitespace-pre-wrap text-muted-foreground">
             {brief.isPending
-              ? "Reading your open work…"
+              ? "Reading your schedule and tasks…"
               : (brief.data?.brief ??
-                "Generate a briefing to see what matters today, what's slipping and what to do next.")}
+                "Generate a briefing to see today's meetings, priority tasks, and smart suggestions.")}
           </div>
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+          {/* Left Column: Tasks */}
           <section className="glass-panel rounded-xl p-5">
             <h2 className="text-sm font-semibold">Priorities</h2>
             <form
@@ -224,32 +240,45 @@ export default function Dashboard() {
             </ul>
           </section>
 
+          {/* Right Column: Calendar Widgets, Memory, Recent Chats */}
           <div className="space-y-6">
+            {/* Today's Schedule Widget */}
             <section className="glass-panel rounded-xl p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="flex size-2 rounded-full bg-emerald-500" />
                   <h2 className="text-sm font-semibold">Today's Schedule</h2>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {workspace.data?.todaysEvents?.length ?? 0} events
-                </span>
+                <Link to="/calendar" className="text-xs text-primary hover:underline">
+                  View full ({todaysEvents.length})
+                </Link>
               </div>
-              {!workspace.data?.todaysEvents || workspace.data.todaysEvents.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  No meetings scheduled for today. Ask Jarvis in chat to schedule one.
-                </p>
+
+              {/* Next Meeting Banner inside widget */}
+              {nextMeeting ? (
+                <div className="mt-3 rounded-lg border border-primary/30 bg-primary/10 p-2.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                    Next Meeting
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">{nextMeeting.summary}</p>
+                  <p className="text-xs text-muted-foreground">{formatEventTime(nextMeeting)}</p>
+                </div>
+              ) : null}
+
+              {todaysEvents.length === 0 ? (
+                <div className="mt-4 text-center py-4">
+                  <p className="text-sm text-muted-foreground">No meetings scheduled for today.</p>
+                  <p className="mt-1 text-xs text-muted-foreground/70">
+                    Ask Jarvis: "Schedule a meeting tomorrow at 3 PM"
+                  </p>
+                </div>
               ) : (
-                <ul className="mt-3 space-y-2.5">
-                  {workspace.data.todaysEvents.map((evt) => (
+                <ul className="mt-3 space-y-2">
+                  {todaysEvents.map((evt) => (
                     <li key={evt.id} className="flex items-start justify-between rounded-md bg-accent/40 p-2.5">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{evt.summary}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {evt.start.dateTime
-                            ? new Date(evt.start.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                            : "All Day"}
-                        </p>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="truncate text-sm font-medium text-foreground">{evt.summary}</p>
+                        <p className="text-xs text-muted-foreground">{formatEventTime(evt)}</p>
                       </div>
                       {evt.htmlLink && (
                         <a href={evt.htmlLink} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">
@@ -260,8 +289,19 @@ export default function Dashboard() {
                   ))}
                 </ul>
               )}
+
+              {/* Free Time Today summary indicator */}
+              {freeTimeToday.length > 0 ? (
+                <div className="mt-3 flex items-center gap-2 rounded-md bg-accent/20 px-2.5 py-1.5 text-xs text-muted-foreground">
+                  <Clock className="size-3.5 text-emerald-500" />
+                  <span>
+                    {freeTimeToday.length} free slot{freeTimeToday.length > 1 ? "s" : ""} remaining today
+                  </span>
+                </div>
+              ) : null}
             </section>
 
+            {/* Memory Card */}
             <section className="glass-panel rounded-xl p-5">
               <div className="flex items-center gap-2">
                 <Brain className="size-4 text-primary" />
@@ -273,7 +313,7 @@ export default function Dashboard() {
                 </p>
               ) : (
                 <ul className="mt-3 space-y-3">
-                  {memories.slice(0, 6).map((memory) => (
+                  {memories.slice(0, 5).map((memory) => (
                     <li key={memory.id}>
                       <p className="text-sm font-medium">{memory.title}</p>
                       <p className="line-clamp-2 text-xs text-muted-foreground">{memory.content}</p>
@@ -283,13 +323,14 @@ export default function Dashboard() {
               )}
             </section>
 
+            {/* Recent Conversations */}
             <section className="glass-panel rounded-xl p-5">
               <h2 className="text-sm font-semibold">Recent conversations</h2>
               {threads.length === 0 ? (
                 <p className="mt-3 text-sm text-muted-foreground">No conversations yet.</p>
               ) : (
                 <ul className="mt-3 space-y-1">
-                  {threads.slice(0, 6).map((thread) => (
+                  {threads.slice(0, 5).map((thread) => (
                     <li key={thread.id}>
                       <Link
                         to={`/chat/${thread.id}`}
