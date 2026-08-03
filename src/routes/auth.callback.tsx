@@ -24,12 +24,16 @@ export default function AuthCallbackPage() {
         if (session?.user) {
           if (session.provider_token) {
             const expiresAt = new Date(Date.now() + (session.expires_in || 3600) * 1000).toISOString();
-            await (supabase.from as any)("user_google_tokens").upsert({
+            const tokenPayload: any = {
               user_id: session.user.id,
               access_token: session.provider_token,
-              refresh_token: session.provider_refresh_token ?? null,
               expires_at: expiresAt,
-            });
+              updated_at: new Date().toISOString(),
+            };
+            if (session.provider_refresh_token) {
+              tokenPayload.refresh_token = session.provider_refresh_token;
+            }
+            await (supabase.from as any)("user_google_tokens").upsert(tokenPayload);
           }
 
           toast.success("Successfully authenticated with Google!");
@@ -39,12 +43,16 @@ export default function AuthCallbackPage() {
             if (currentSession?.user && isMounted) {
               if (currentSession.provider_token) {
                 const expiresAt = new Date(Date.now() + (currentSession.expires_in || 3600) * 1000).toISOString();
-                await (supabase.from as any)("user_google_tokens").upsert({
+                const tokenPayload: any = {
                   user_id: currentSession.user.id,
                   access_token: currentSession.provider_token,
-                  refresh_token: currentSession.provider_refresh_token ?? null,
                   expires_at: expiresAt,
-                });
+                  updated_at: new Date().toISOString(),
+                };
+                if (currentSession.provider_refresh_token) {
+                  tokenPayload.refresh_token = currentSession.provider_refresh_token;
+                }
+                await (supabase.from as any)("user_google_tokens").upsert(tokenPayload);
               }
               listener.subscription.unsubscribe();
               navigate("/dashboard", { replace: true });

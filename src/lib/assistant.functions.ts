@@ -1,7 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { GoogleCalendarService } from "@/features/calendar/services.server";
+import { GmailService } from "@/features/gmail/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
+import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
 
 export type TaskRow = {
   id: string;
@@ -37,7 +39,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -59,6 +61,7 @@ export async function getWorkspace() {
       .order("updated_at", { ascending: false })
       .limit(20),
     GoogleCalendarService.listEvents(supabase, userId, startToday, endToday).catch(() => []),
+    GmailService.listMessages(supabase, userId, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
   ]);
 
   const now = new Date();
@@ -82,6 +85,7 @@ export async function getWorkspace() {
     todaysEvents: calendarEvents,
     nextMeeting,
     freeTimeToday,
+    unreadEmails: unreadEmails.messages ?? [],
   };
 }
 
@@ -107,6 +111,61 @@ export async function deleteCalendarEvent(eventId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return GoogleCalendarService.deleteEvent(supabase, user.id, eventId);
+}
+
+// Gmail Client Helpers
+export async function fetchGmailMessages(options: ListMessagesOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.listMessages(supabase, user.id, options);
+}
+
+export async function fetchGmailMessage(messageId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.getMessage(supabase, user.id, messageId, true);
+}
+
+export async function fetchGmailThread(threadId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.getThread(supabase, user.id, threadId);
+}
+
+export async function markGmailRead(messageId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.modifyLabels(supabase, user.id, messageId, [], ["UNREAD"]);
+}
+
+export async function markGmailUnread(messageId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.modifyLabels(supabase, user.id, messageId, ["UNREAD"], []);
+}
+
+export async function archiveGmailMessage(messageId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.modifyLabels(supabase, user.id, messageId, [], ["INBOX"]);
+}
+
+export async function sendDirectGmail(input: { to: string; subject: string; body: string }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.sendEmail(supabase, user.id, input);
+}
+
+export async function createGmailDraft(input: CreateDraftInput) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.createDraft(supabase, user.id, input);
+}
+
+export async function sendGmailReply(input: ReplyInput) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GmailService.sendReply(supabase, user.id, input);
 }
 
 export async function listThreads() {
@@ -279,7 +338,7 @@ export async function generateDailyBrief() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [tasks, memories, calendarEvents] = await Promise.all([
+  const [tasks, memories, calendarEvents, unreadEmails] = await Promise.all([
     supabase
       .from("tasks")
       .select("title, priority, status, due_at")
@@ -293,23 +352,33 @@ export async function generateDailyBrief() {
       .order("created_at", { ascending: false })
       .limit(15),
     GoogleCalendarService.listEvents(supabase, user.id, startToday, endToday).catch(() => []),
+    GmailService.listMessages(supabase, user.id, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
   ]);
 
   const openTasks = tasks.data ?? [];
   const memoryList = memories.data ?? [];
+  const unreadList = unreadEmails.messages ?? [];
 
   let brief = "### Daily Brief\n\n";
   if (calendarEvents.length > 0) {
     brief += `**Today's Schedule (${calendarEvents.length} meetings):**\n`;
     calendarEvents.forEach((evt) => {
       const time = evt.start.dateTime
-        ? new Date(evt.start.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        ? new Date(evt.start.dateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })
         : "All Day";
       brief += `- [${time}] ${evt.summary}${evt.location ? ` @ ${evt.location}` : ""}\n`;
     });
     brief += "\n";
   } else {
     brief += "No meetings scheduled for today.\n\n";
+  }
+
+  if (unreadList.length > 0) {
+    brief += `**Unread Inbox (${unreadList.length} unread):**\n`;
+    unreadList.forEach((msg) => {
+      brief += `- ${msg.subject} from ${msg.from}\n`;
+    });
+    brief += "\n";
   }
 
   if (openTasks.length > 0) {

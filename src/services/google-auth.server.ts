@@ -14,7 +14,24 @@ export class GoogleAuthService {
    */
   static async getValidAccessToken(supabase: SupabaseClient, userId: string): Promise<string | null> {
     try {
-      // 1. Check database for existing token
+      // 1. Check active Supabase Session provider token first for fresh OAuth scopes
+      const { data: sessionData } = await supabase.auth.getSession();
+      const providerToken = sessionData.session?.provider_token;
+      const providerRefreshToken = sessionData.session?.provider_refresh_token;
+
+      if (providerToken && sessionData.session?.user?.id === userId) {
+        const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+        await supabase.from("user_google_tokens").upsert({
+          user_id: userId,
+          access_token: providerToken,
+          ...(providerRefreshToken ? { refresh_token: providerRefreshToken } : {}),
+          expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        });
+        return providerToken;
+      }
+
+      // 2. Check database for stored token
       const { data: dbToken, error } = await supabase
         .from("user_google_tokens")
         .select("access_token, refresh_token, expires_at")
@@ -22,23 +39,6 @@ export class GoogleAuthService {
         .maybeSingle();
 
       if (error || !dbToken) {
-        // Fallback: Check active Supabase Session provider token
-        const { data: sessionData } = await supabase.auth.getSession();
-        const providerToken = sessionData.session?.provider_token;
-        const providerRefreshToken = sessionData.session?.provider_refresh_token;
-
-        if (providerToken) {
-          // Save to database for future background access
-          const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
-          await supabase.from("user_google_tokens").upsert({
-            user_id: userId,
-            access_token: providerToken,
-            refresh_token: providerRefreshToken ?? null,
-            expires_at: expiresAt,
-          });
-          return providerToken;
-        }
-
         logger.warn("provider", "No Google token found for user", { userId });
         return null;
       }

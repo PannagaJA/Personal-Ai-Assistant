@@ -11,6 +11,7 @@ import {
   Circle,
   Clock,
   Loader2,
+  Mail,
   Plus,
   Sparkles,
   Trash2,
@@ -29,6 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatEventTime } from "@/features/calendar/utils";
+import { extractSenderName } from "@/features/gmail/utils";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -89,6 +91,7 @@ export default function Dashboard() {
   const todaysEvents = workspace.data?.todaysEvents ?? [];
   const nextMeeting = workspace.data?.nextMeeting;
   const freeTimeToday = workspace.data?.freeTimeToday ?? [];
+  const unreadEmails = workspace.data?.unreadEmails ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -106,10 +109,16 @@ export default function Dashboard() {
               {name ? `, ${name}` : ""}.
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {todaysEvents.length} meetings today · {openTasks.length} open tasks · {doneToday} completed
+              {todaysEvents.length} meetings · {unreadEmails.length} unread emails · {openTasks.length} open tasks
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/gmail">
+                <Mail className="size-4" />
+                Gmail
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/calendar">
                 <CalendarIcon className="size-4" />
@@ -144,101 +153,140 @@ export default function Dashboard() {
           </div>
           <div className="mt-3 text-sm whitespace-pre-wrap text-muted-foreground">
             {brief.isPending
-              ? "Reading your schedule and tasks…"
+              ? "Reading your emails, schedule and tasks…"
               : (brief.data?.brief ??
-                "Generate a briefing to see today's meetings, priority tasks, and smart suggestions.")}
+                "Generate a briefing to see unread emails, today's schedule, priority tasks, and smart suggestions.")}
           </div>
         </section>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          {/* Left Column: Tasks */}
-          <section className="glass-panel rounded-xl p-5">
-            <h2 className="text-sm font-semibold">Priorities</h2>
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (newTask.trim()) addTask.mutate(newTask.trim());
-              }}
-              className="mt-3 flex gap-2"
-            >
-              <Input
-                value={newTask}
-                onChange={(event) => setNewTask(event.target.value)}
-                placeholder="Add a task…"
-              />
-              <Button type="submit" size="icon" disabled={addTask.isPending || !newTask.trim()}>
-                <Plus className="size-4" />
-              </Button>
-            </form>
+          {/* Left Column: Tasks & Unread Email Widget */}
+          <div className="space-y-6">
+            {/* Priorities / Tasks */}
+            <section className="glass-panel rounded-xl p-5">
+              <h2 className="text-sm font-semibold">Priorities</h2>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (newTask.trim()) addTask.mutate(newTask.trim());
+                }}
+                className="mt-3 flex gap-2"
+              >
+                <Input
+                  value={newTask}
+                  onChange={(event) => setNewTask(event.target.value)}
+                  placeholder="Add a task…"
+                />
+                <Button type="submit" size="icon" disabled={addTask.isPending || !newTask.trim()}>
+                  <Plus className="size-4" />
+                </Button>
+              </form>
 
-            <ul className="mt-4 space-y-1">
-              {workspace.isLoading
-                ? [0, 1, 2].map((index) => <Skeleton key={index} className="h-11 w-full rounded-md" />)
-                : null}
-              {!workspace.isLoading && tasks.length === 0 ? (
-                <p className="py-6 text-sm text-muted-foreground">
-                  Nothing tracked yet. Add a task, or just tell Jarvis in chat.
-                </p>
-              ) : null}
-              {tasks.map((task) => {
-                const due = formatDue(task.due_at);
-                const done = task.status === "done";
-                return (
-                  <li
-                    key={task.id}
-                    className="group flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/60"
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleTask.mutate({ id: task.id, status: done ? "open" : "done" })
-                      }
-                      className="text-muted-foreground transition-colors hover:text-primary"
-                      aria-label={done ? "Reopen task" : "Complete task"}
+              <ul className="mt-4 space-y-1">
+                {workspace.isLoading
+                  ? [0, 1, 2].map((index) => <Skeleton key={index} className="h-11 w-full rounded-md" />)
+                  : null}
+                {!workspace.isLoading && tasks.length === 0 ? (
+                  <p className="py-6 text-sm text-muted-foreground">
+                    Nothing tracked yet. Add a task, or just tell Jarvis in chat.
+                  </p>
+                ) : null}
+                {tasks.map((task) => {
+                  const due = formatDue(task.due_at);
+                  const done = task.status === "done";
+                  return (
+                    <li
+                      key={task.id}
+                      className="group flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/60"
                     >
-                      {done ? (
-                        <CheckCircle2 className="size-4 text-success" />
-                      ) : (
-                        <Circle className="size-4" />
-                      )}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={cn(
-                          "truncate text-sm",
-                          done && "text-muted-foreground line-through",
-                        )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleTask.mutate({ id: task.id, status: done ? "open" : "done" })
+                        }
+                        className="text-muted-foreground transition-colors hover:text-primary"
+                        aria-label={done ? "Reopen task" : "Complete task"}
                       >
-                        {task.title}
-                      </p>
-                      {due ? (
+                        {done ? (
+                          <CheckCircle2 className="size-4 text-success" />
+                        ) : (
+                          <Circle className="size-4" />
+                        )}
+                      </button>
+                      <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            "text-xs",
-                            due.overdue && !done ? "text-destructive" : "text-muted-foreground",
+                            "truncate text-sm",
+                            done && "text-muted-foreground line-through",
                           )}
                         >
-                          {due.overdue && !done ? "Overdue · " : ""}
-                          {due.label}
+                          {task.title}
                         </p>
+                        {due ? (
+                          <p
+                            className={cn(
+                              "text-xs",
+                              due.overdue && !done ? "text-destructive" : "text-muted-foreground",
+                            )}
+                          >
+                            {due.overdue && !done ? "Overdue · " : ""}
+                            {due.label}
+                          </p>
+                        ) : null}
+                      </div>
+                      {task.priority === "high" && !done ? (
+                        <Badge variant="secondary">High</Badge>
                       ) : null}
-                    </div>
-                    {task.priority === "high" && !done ? (
-                      <Badge variant="secondary">High</Badge>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => dropTask.mutate(task.id)}
-                      className="text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:text-destructive"
-                      aria-label="Delete task"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+                      <button
+                        type="button"
+                        onClick={() => dropTask.mutate(task.id)}
+                        className="text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:text-destructive"
+                        aria-label="Delete task"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+
+            {/* Unread Emails Widget */}
+            <section className="glass-panel rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Mail className="size-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Unread Emails</h2>
+                </div>
+                <Link to="/gmail" className="text-xs text-primary hover:underline">
+                  View inbox ({unreadEmails.length})
+                </Link>
+              </div>
+
+              {unreadEmails.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Your inbox is clear. No unread emails requiring attention.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {unreadEmails.slice(0, 4).map((msg) => (
+                    <li key={msg.id} className="flex items-start justify-between rounded-md bg-accent/40 p-2.5">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="truncate text-xs font-semibold text-foreground">
+                          {extractSenderName(msg.from)}
+                        </p>
+                        <p className="truncate text-sm font-medium text-foreground">{msg.subject}</p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">{msg.snippet}</p>
+                      </div>
+                      <Link to="/gmail" className="text-xs text-primary hover:underline shrink-0">
+                        Read
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
 
           {/* Right Column: Calendar Widgets, Memory, Recent Chats */}
           <div className="space-y-6">

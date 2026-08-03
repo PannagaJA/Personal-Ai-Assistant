@@ -57,10 +57,13 @@ export default function AuthPage() {
             "openid",
             "email",
             "profile",
+            "https://mail.google.com/",
             "https://www.googleapis.com/auth/calendar",
             "https://www.googleapis.com/auth/calendar.events",
             "https://www.googleapis.com/auth/gmail.readonly",
             "https://www.googleapis.com/auth/gmail.send",
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/gmail.compose",
             "https://www.googleapis.com/auth/drive.readonly",
             "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/tasks",
@@ -69,6 +72,7 @@ export default function AuthPage() {
           queryParams: {
             access_type: "offline",
             prompt: "consent",
+            scope: "openid email profile https://mail.google.com/ https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/contacts.readonly",
           },
         },
       });

@@ -13,6 +13,19 @@ import {
   detectConflictsTool,
   getNextEventTool,
 } from "@/features/calendar/tools";
+import {
+  listUnreadGmailTool,
+  searchGmailTool,
+  readGmailMessageTool,
+  summarizeInboxGmailTool,
+  replyGmailTool,
+  createDraftGmailTool,
+  archiveGmailTool,
+  markReadGmailTool,
+  markUnreadGmailTool,
+  listLabelsGmailTool,
+  getThreadGmailTool,
+} from "@/features/gmail/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -36,4 +49,17 @@ export function initializeToolRegistry() {
   registry.register(findFreeTimeTool);
   registry.register(detectConflictsTool);
   registry.register(getNextEventTool);
+
+  // Gmail Tools (11 total - draft ONLY, send requires explicit human button click)
+  registry.register(listUnreadGmailTool);
+  registry.register(searchGmailTool);
+  registry.register(readGmailMessageTool);
+  registry.register(summarizeInboxGmailTool);
+  registry.register(replyGmailTool);
+  registry.register(createDraftGmailTool);
+  registry.register(archiveGmailTool);
+  registry.register(markReadGmailTool);
+  registry.register(markUnreadGmailTool);
+  registry.register(listLabelsGmailTool);
+  registry.register(getThreadGmailTool);
 }

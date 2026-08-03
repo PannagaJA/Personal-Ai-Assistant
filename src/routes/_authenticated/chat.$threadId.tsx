@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { createThread, deleteThread, getThread, listThreads } from "@/lib/assistant.functions";
+import { createThread, deleteThread, getThread, listThreads, sendDirectGmail } from "@/lib/assistant.functions";
 import { AppShell } from "@/components/app-shell";
 import {
   Conversation,
@@ -25,6 +25,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import jarvisMark from "@/assets/jarvis-mark.png";
+import { EmailDraftApprovalCard } from "@/features/gmail/components/EmailDraftApprovalCard";
 
 const suggestions = [
   "What should I focus on today?",
@@ -135,6 +136,8 @@ function ChatWindow({
 }) {
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
+  const [sendingDraftId, setSendingDraftId] = useState<string | null>(null);
+  const [sentDraftIds, setSentDraftIds] = useState<Set<string>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const transport = useMemo(
@@ -169,6 +172,24 @@ function ChatWindow({
     if (!trimmed || busy) return;
     void sendMessage({ text: trimmed });
     setInput("");
+  };
+
+  const handleEditDraft = (to: string, subject: string) => {
+    setInput(`Please edit the draft for ${to} (Subject: "${subject}"). I want to change: `);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  const handleApproveSend = async (to: string, subject: string, body: string, cardKey: string) => {
+    try {
+      setSendingDraftId(cardKey);
+      await sendDirectGmail({ to, subject, body });
+      toast.success(`Email sent successfully to ${to}`);
+      setSentDraftIds((prev) => new Set(prev).add(cardKey));
+    } catch (err) {
+      toast.error("Failed to send email", { description: err instanceof Error ? err.message : String(err) });
+    } finally {
+      setSendingDraftId(null);
+    }
   };
 
   return (
@@ -220,21 +241,47 @@ function ChatWindow({
                     const toolPart = part as unknown as {
                       type: `tool-${string}`;
                       state: "input-streaming" | "input-available" | "output-available" | "output-error";
-                      input?: unknown;
-                      output?: unknown;
+                      input?: any;
+                      output?: any;
                       errorText?: string;
                     };
+
+                    const isDraftTool =
+                      toolPart.type === "tool-gmail_create_draft" ||
+                      toolPart.type === "tool-gmail_send";
+
+                    const draftInput = toolPart.input ?? {};
+                    const draftTo = draftInput.to || toolPart.output?.to || "";
+                    const draftSubject = draftInput.subject || toolPart.output?.subject || "";
+                    const draftBody = draftInput.body || toolPart.output?.body || "";
+
                     return (
-                      <Tool key={index} defaultOpen={false}>
-                        <ToolHeader type={toolPart.type} state={toolPart.state} />
-                        <ToolContent>
-                          <ToolInput input={toolPart.input} />
-                          <ToolOutput
-                            output={toolPart.output as never}
-                            errorText={toolPart.errorText as never}
+                      <div key={index} className="space-y-2">
+                        {isDraftTool && draftTo ? (
+                          <EmailDraftApprovalCard
+                            to={draftTo}
+                            subject={draftSubject}
+                            body={draftBody}
+                            onApproveSend={(newTo, newSubject, newBody) =>
+                              handleApproveSend(newTo, newSubject, newBody, `${message.id}-${index}`)
+                            }
+                            onEdit={() => handleEditDraft(draftTo, draftSubject)}
+                            isSending={sendingDraftId === `${message.id}-${index}`}
+                            isSent={sentDraftIds.has(`${message.id}-${index}`)}
                           />
-                        </ToolContent>
-                      </Tool>
+                        ) : null}
+
+                        <Tool defaultOpen={false}>
+                          <ToolHeader type={toolPart.type} state={toolPart.state} />
+                          <ToolContent>
+                            <ToolInput input={toolPart.input} />
+                            <ToolOutput
+                              output={toolPart.output as never}
+                              errorText={toolPart.errorText as never}
+                            />
+                          </ToolContent>
+                        </Tool>
+                      </div>
                     );
                   }
                   return null;

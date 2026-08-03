@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Moon, Sun, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Mail, Moon, Sun, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/calendar", label: "Calendar", icon: CalendarIcon },
+  { to: "/gmail", label: "Gmail", icon: Mail },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -24,6 +25,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await (supabase.from as any)("user_google_tokens").delete().eq("user_id", user.id);
+    }
     await supabase.auth.signOut();
     navigate("/auth", { replace: true });
   }
