@@ -6,6 +6,7 @@ import { NotesService } from "@/features/notes/services.server";
 import { FollowUpsService } from "@/features/followups/services.server";
 import { PlannerService } from "@/features/planner/services.server";
 import { AutomationService } from "@/features/automation/services.server";
+import { NotificationService } from "@/features/notifications/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
@@ -14,6 +15,7 @@ import type { UserNote, ListNotesOptions } from "@/features/notes/types";
 import type { FollowUpItem, ListFollowUpsOptions } from "@/features/followups/types";
 import type { MorningBrief, EveningReview, DailyTimelineItem } from "@/features/planner/types";
 import type { AutomationItem, AutomationRun, ListAutomationsOptions } from "@/features/automation/types";
+import type { NotificationItem, ListNotificationsOptions } from "@/features/notifications/types";
 
 export type TaskRow = {
   id: string;
@@ -49,7 +51,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups, morningBrief, dailyTimeline, automations] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups, morningBrief, dailyTimeline, automations, notifications] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -78,6 +80,7 @@ export async function getWorkspace() {
     PlannerService.generateMorningBrief(supabase, userId).catch(() => null),
     PlannerService.getDailyTimeline(supabase, userId).catch(() => []),
     AutomationService.ensureDefaultAutomations(supabase, userId).catch(() => []),
+    NotificationService.listNotifications(supabase, userId, { limit: 15 }).catch(() => []),
   ]);
 
   const now = new Date();
@@ -127,6 +130,8 @@ export async function getWorkspace() {
     morningBrief,
     dailyTimeline,
     automations,
+    notifications,
+    unreadNotificationsCount: notifications.filter((n) => !n.isRead).length,
   };
 }
 
@@ -626,4 +631,40 @@ export async function fetchAutomationHistory() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return AutomationService.getExecutionHistory(supabase, user.id);
+}
+
+// AI Notification & Attention Engine Client Helpers
+export async function fetchNotifications(options: ListNotificationsOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotificationService.listNotifications(supabase, user.id, options);
+}
+
+export async function markNotificationRead(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotificationService.markAsRead(supabase, user.id, id);
+}
+
+export async function clearReadNotifications() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotificationService.clearAllRead(supabase, user.id);
+}
+
+export async function createNotification(payload: {
+  type: any;
+  title: string;
+  message: string;
+  urgency?: any;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotificationService.createNotification(supabase, user.id, payload);
+}
+
+export async function registerDeviceToken(fcmToken: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotificationService.registerDeviceToken(supabase, user.id, fcmToken);
 }

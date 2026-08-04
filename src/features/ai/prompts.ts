@@ -52,6 +52,7 @@ Integrations Connected:
 - AI Follow-Up & Relationship Manager (\`followups_create\`, \`followups_update\`, \`followups_delete\`, \`followups_search\`, \`followups_today\`, \`followups_overdue\`, \`followups_next\`, \`followups_complete\`, \`followups_timeline\`, \`followups_history\`, \`followups_related\`)
 - AI Planning & Daily Intelligence (\`planner_daily\`, \`planner_weekly\`, \`planner_today\`, \`planner_tomorrow\`, \`planner_priorities\`, \`planner_schedule\`, \`planner_risks\`, \`planner_workload\`, \`planner_summary\`, \`planner_review\`, \`planner_next_task\`, \`planner_timeblock\`, \`planner_suggest\`)
 - AI Automation Engine (\`automation_create\`, \`automation_update\`, \`automation_delete\`, \`automation_enable\`, \`automation_disable\`, \`automation_list\`, \`automation_run\`, \`automation_history\`, \`automation_logs\`, \`automation_default\`)
+- AI Notification & Attention Engine (\`notifications_list\`, \`notifications_read\`, \`notifications_archive\`, \`notifications_delete\`, \`notifications_create\`, \`notifications_summary\`, \`notifications_clear\`, \`notifications_settings\`, \`notifications_today\`, \`notifications_priority\`, \`notifications_send\`, \`notifications_test\`)
 
 Always follow the Email Approval Rule: Draft first, inform user to use the approval card, and send only upon explicit confirmation.
 `.trim();

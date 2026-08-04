@@ -22,6 +22,7 @@ import {
   Trash2,
   Users,
   Zap,
+  Bell,
 } from "lucide-react";
 import { MorningBriefCard } from "@/features/planner/components/MorningBriefCard";
 import {
@@ -113,6 +114,8 @@ export default function Dashboard() {
   const morningBrief = workspace.data?.morningBrief;
   const dailyTimeline = workspace.data?.dailyTimeline ?? [];
   const automations = workspace.data?.automations ?? [];
+  const notifications = workspace.data?.notifications ?? [];
+  const unreadNotificationsCount = workspace.data?.unreadNotificationsCount ?? 0;
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -130,10 +133,21 @@ export default function Dashboard() {
               {name ? `, ${name}` : ""}.
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {todaysEvents.length} meetings · {unreadEmails.length} unread emails · {openTasks.length} open tasks · {automations.filter((a) => a.isEnabled).length} active automations
+              {todaysEvents.length} meetings · {unreadEmails.length} unread emails · {openTasks.length} open tasks · {unreadNotificationsCount} notifications
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild className="relative">
+              <Link to="/notifications">
+                <Bell className="size-4 text-sky-400" />
+                Notifications
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+                    {unreadNotificationsCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/automations">
                 <Zap className="size-4 text-amber-400" />

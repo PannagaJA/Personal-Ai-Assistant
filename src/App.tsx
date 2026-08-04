@@ -18,6 +18,8 @@ import NotesPage from "@/routes/_authenticated/notes";
 import FollowUpsPage from "@/routes/_authenticated/followups";
 import PlannerPage from "@/routes/_authenticated/planner";
 import AutomationsPage from "@/routes/_authenticated/automations";
+import NotificationsPage from "@/routes/_authenticated/notifications";
+import { FcmInitializer } from "@/features/notifications/components/FcmInitializer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +48,12 @@ function ProtectedLayout() {
   if (authenticated === null) return null;
   if (!authenticated) return <Navigate to="/auth" replace />;
 
-  return <Outlet />;
+  return (
+    <>
+      <FcmInitializer />
+      <Outlet />
+    </>
+  );
 }
 
 export function App() {
@@ -61,6 +68,7 @@ export function App() {
 
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/planner" element={<PlannerPage />} />
               <Route path="/automations" element={<AutomationsPage />} />
               <Route path="/chat" element={<ChatEntry />} />

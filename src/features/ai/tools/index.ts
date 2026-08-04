@@ -88,6 +88,20 @@ import {
   automationLogsTool,
   automationDefaultTool,
 } from "@/features/automation/tools";
+import {
+  notificationsListTool,
+  notificationsReadTool,
+  notificationsArchiveTool,
+  notificationsDeleteTool,
+  notificationsCreateTool,
+  notificationsSummaryTool,
+  notificationsClearTool,
+  notificationsSettingsTool,
+  notificationsTodayTool,
+  notificationsPriorityTool,
+  notificationsSendTool,
+  notificationsTestTool,
+} from "@/features/notifications/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -186,4 +200,18 @@ export function initializeToolRegistry() {
   registry.register(automationHistoryTool);
   registry.register(automationLogsTool);
   registry.register(automationDefaultTool);
+
+  // AI Notification & Attention Engine Tools (12 total)
+  registry.register(notificationsListTool);
+  registry.register(notificationsReadTool);
+  registry.register(notificationsArchiveTool);
+  registry.register(notificationsDeleteTool);
+  registry.register(notificationsCreateTool);
+  registry.register(notificationsSummaryTool);
+  registry.register(notificationsClearTool);
+  registry.register(notificationsSettingsTool);
+  registry.register(notificationsTodayTool);
+  registry.register(notificationsPriorityTool);
+  registry.register(notificationsSendTool);
+  registry.register(notificationsTestTool);
 }
