@@ -61,6 +61,8 @@ export class GoogleAuthService {
 
       if (!refreshed) {
         logger.error("provider", "Failed to refresh Google token", { userId });
+        // Clear stale refresh token so session provider token is preferred
+        await supabase.from("user_google_tokens").update({ refresh_token: null }).eq("user_id", userId);
         return null;
       }
 
@@ -80,24 +82,36 @@ export class GoogleAuthService {
   }
 
   private static async refreshAccessToken(refreshToken: string): Promise<{ access_token: string; expires_in: number } | null> {
-    const clientId = process.env["GOOGLE_CLIENT_ID"] || process.env["VITE_GOOGLE_CLIENT_ID"];
-    const clientSecret = process.env["GOOGLE_CLIENT_SECRET"];
+    const getEnv = (key: string) => {
+      if (typeof process !== "undefined" && process.env && process.env[key]) {
+        return process.env[key];
+      }
+      if (typeof import.meta !== "undefined" && import.meta.env) {
+        return (import.meta.env as Record<string, string | undefined>)[key] || (import.meta.env as Record<string, string | undefined>)[`VITE_${key}`];
+      }
+      return undefined;
+    };
 
-    if (!clientId || !clientSecret) {
-      logger.error("provider", "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET for token refresh");
+    const clientId = getEnv("GOOGLE_CLIENT_ID") || getEnv("VITE_GOOGLE_CLIENT_ID");
+    const clientSecret = getEnv("GOOGLE_CLIENT_SECRET") || getEnv("VITE_GOOGLE_CLIENT_SECRET");
+
+    if (!clientId) {
+      logger.error("provider", "Missing GOOGLE_CLIENT_ID for token refresh");
       return null;
     }
 
     try {
+      const bodyParams: Record<string, string> = {
+        client_id: clientId,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      };
+      if (clientSecret) bodyParams["client_secret"] = clientSecret;
+
       const response = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: refreshToken,
-          grant_type: "refresh_token",
-        }),
+        body: new URLSearchParams(bodyParams),
       });
 
       if (!response.ok) {

@@ -14,7 +14,9 @@ import {
   Mail,
   Plus,
   Sparkles,
+  Star,
   Trash2,
+  Users,
 } from "lucide-react";
 import {
   deleteTask,
@@ -31,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatEventTime } from "@/features/calendar/utils";
 import { extractSenderName } from "@/features/gmail/utils";
+import { getPrimaryName, getPrimaryEmail, getPrimaryOrganization } from "@/features/contacts/utils";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -92,6 +95,9 @@ export default function Dashboard() {
   const nextMeeting = workspace.data?.nextMeeting;
   const freeTimeToday = workspace.data?.freeTimeToday ?? [];
   const unreadEmails = workspace.data?.unreadEmails ?? [];
+  const contacts = workspace.data?.contacts ?? [];
+  const favoriteContacts = workspace.data?.favoriteContacts ?? [];
+  const frequentlyContacted = workspace.data?.frequentlyContacted ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -347,6 +353,82 @@ export default function Dashboard() {
                   </span>
                 </div>
               ) : null}
+            </section>
+
+            {/* People & Contacts Widget */}
+            <section className="glass-panel rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="size-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Contacts Directory</h2>
+                </div>
+                <Link to="/contacts" className="text-xs text-primary hover:underline">
+                  View directory ({contacts.length})
+                </Link>
+              </div>
+
+              {contacts.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  No contacts loaded. Visit Contacts page to view your directory.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {favoriteContacts.length > 0 ? (
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                        Starred Favorites
+                      </p>
+                      <div className="space-y-1.5">
+                        {favoriteContacts.slice(0, 3).map((c) => {
+                          const name = getPrimaryName(c);
+                          const email = getPrimaryEmail(c);
+                          return (
+                            <Link
+                              key={c.resourceName}
+                              to="/contacts"
+                              className="flex items-center justify-between rounded-md bg-accent/40 px-2.5 py-1.5 text-xs transition hover:bg-accent/70"
+                            >
+                              <div className="min-w-0 flex-1 pr-2">
+                                <p className="truncate font-medium text-foreground">{name}</p>
+                                {email && <p className="truncate text-muted-foreground">{email}</p>}
+                              </div>
+                              <Star className="size-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Recent & Frequent Contacts
+                    </p>
+                    <div className="space-y-1.5">
+                      {(frequentlyContacted.length > 0 ? frequentlyContacted : contacts).slice(0, 3).map((c) => {
+                        const name = getPrimaryName(c);
+                        const email = getPrimaryEmail(c);
+                        const org = getPrimaryOrganization(c);
+                        return (
+                          <Link
+                            key={c.resourceName}
+                            to="/contacts"
+                            className="flex items-center justify-between rounded-md bg-accent/30 px-2.5 py-1.5 text-xs transition hover:bg-accent/60"
+                          >
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="truncate font-medium text-foreground">{name}</p>
+                              <p className="truncate text-muted-foreground">
+                                {org ? org.name : email || "Contact"}
+                              </p>
+                            </div>
+                            <span className="text-[10px] text-primary hover:underline shrink-0">View</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Memory Card */}

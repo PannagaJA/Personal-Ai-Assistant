@@ -26,6 +26,16 @@ import {
   listLabelsGmailTool,
   getThreadGmailTool,
 } from "@/features/gmail/tools";
+import {
+  contactsSearchTool,
+  contactsListTool,
+  contactsEmailTool,
+  contactsPhoneTool,
+  contactsOrganizationTool,
+  contactsRecentTool,
+  contactsFavoriteTool,
+  contactsDetailsTool,
+} from "@/features/contacts/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -62,4 +72,14 @@ export function initializeToolRegistry() {
   registry.register(markUnreadGmailTool);
   registry.register(listLabelsGmailTool);
   registry.register(getThreadGmailTool);
+
+  // Google Contacts Tools (8 total)
+  registry.register(contactsSearchTool);
+  registry.register(contactsListTool);
+  registry.register(contactsEmailTool);
+  registry.register(contactsPhoneTool);
+  registry.register(contactsOrganizationTool);
+  registry.register(contactsRecentTool);
+  registry.register(contactsFavoriteTool);
+  registry.register(contactsDetailsTool);
 }

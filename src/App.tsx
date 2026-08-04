@@ -13,6 +13,7 @@ import ChatEntry from "@/routes/_authenticated/chat.index";
 import ChatPage from "@/routes/_authenticated/chat.$threadId";
 import CalendarPage from "@/routes/_authenticated/calendar";
 import GmailPage from "@/routes/_authenticated/gmail";
+import ContactsPage from "@/routes/_authenticated/contacts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,6 +61,7 @@ export function App() {
               <Route path="/chat/:threadId" element={<ChatPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/gmail" element={<GmailPage />} />
+              <Route path="/contacts" element={<ContactsPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

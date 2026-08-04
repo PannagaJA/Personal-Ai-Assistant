@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import jarvisMark from "@/assets/jarvis-mark.png";
 import { EmailDraftApprovalCard } from "@/features/gmail/components/EmailDraftApprovalCard";
+import { ContactCallCard } from "@/features/contacts/components/ContactCallCard";
 
 const suggestions = [
   "What should I focus on today?",
@@ -250,10 +251,22 @@ function ChatWindow({
                       toolPart.type === "tool-gmail_create_draft" ||
                       toolPart.type === "tool-gmail_send";
 
+                    const isPhoneTool =
+                      toolPart.type === "tool-contacts_phone" ||
+                      toolPart.type === "tool-contacts_search" ||
+                      toolPart.type === "tool-contacts_details";
+
                     const draftInput = toolPart.input ?? {};
                     const draftTo = draftInput.to || toolPart.output?.to || "";
                     const draftSubject = draftInput.subject || toolPart.output?.subject || "";
                     const draftBody = draftInput.body || toolPart.output?.body || "";
+
+                    const phoneOutputData = toolPart.output?.data;
+                    const phoneResults: Array<{ name: string; phone: string; type?: string }> = Array.isArray(phoneOutputData)
+                      ? phoneOutputData.filter((r) => r && (r.phone || r.phones))
+                      : phoneOutputData && (phoneOutputData.phone || phoneOutputData.phones)
+                      ? [phoneOutputData]
+                      : [];
 
                     return (
                       <div key={index} className="space-y-2">
@@ -271,16 +284,27 @@ function ChatWindow({
                           />
                         ) : null}
 
-                        <Tool defaultOpen={false}>
-                          <ToolHeader type={toolPart.type} state={toolPart.state} />
-                          <ToolContent>
-                            <ToolInput input={toolPart.input} />
-                            <ToolOutput
-                              output={toolPart.output as never}
-                              errorText={toolPart.errorText as never}
+                        {isPhoneTool && phoneResults.length > 0 ? (
+                          phoneResults.map((res, pIdx) => (
+                            <ContactCallCard
+                              key={pIdx}
+                              name={res.name || "Contact"}
+                              phone={res.phone || (res as any).phones?.[0]?.value || ""}
+                              type={(res as any).type || "Mobile"}
                             />
-                          </ToolContent>
-                        </Tool>
+                          ))
+                        ) : (
+                          <Tool defaultOpen={false}>
+                            <ToolHeader type={toolPart.type} state={toolPart.state} />
+                            <ToolContent>
+                              <ToolInput input={toolPart.input} />
+                              <ToolOutput
+                                output={toolPart.output as never}
+                                errorText={toolPart.errorText as never}
+                              />
+                            </ToolContent>
+                          </Tool>
+                        )}
                       </div>
                     );
                   }

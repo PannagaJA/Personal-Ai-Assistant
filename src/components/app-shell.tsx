@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Mail, Moon, Sun, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Mail, Users, Moon, Sun, LogOut } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const nav = [
   { to: "/chat", label: "Chat", icon: MessageSquare },
   { to: "/calendar", label: "Calendar", icon: CalendarIcon },
   { to: "/gmail", label: "Gmail", icon: Mail },
+  { to: "/contacts", label: "Contacts", icon: Users },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

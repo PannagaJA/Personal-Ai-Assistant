@@ -2,8 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "@/services/logger";
 import { GoogleCalendarService } from "@/features/calendar/services.server";
 import { GmailService } from "@/features/gmail/services.server";
+import { GoogleContactsService } from "@/features/contacts/services.server";
 import type { CalendarEvent, FreeTimeSlot } from "@/features/calendar/types";
 import type { GmailMessage } from "@/features/gmail/types";
+import type { GoogleContact } from "@/features/contacts/types";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 
 export interface AIContext {
@@ -16,6 +18,7 @@ export interface AIContext {
   nextMeeting?: CalendarEvent;
   freeSlotsToday?: FreeTimeSlot[];
   unreadEmails: GmailMessage[];
+  relevantContacts: GoogleContact[];
 }
 
 export async function buildAIContext(
@@ -31,7 +34,7 @@ export async function buildAIContext(
   try {
     const like = userQuery ? `%${userQuery}%` : "";
 
-    const [tasksRes, memoriesRes, calendarEvents, unreadEmailRes] = await Promise.all([
+    const [tasksRes, memoriesRes, calendarEvents, unreadEmailRes, contactsRes] = await Promise.all([
       supabase
         .from("tasks")
         .select("title, priority, due_at")
@@ -54,6 +57,9 @@ export async function buildAIContext(
             .limit(5),
       GoogleCalendarService.listEvents(supabase, userId, startOfDay, endOfDay).catch(() => []),
       GmailService.listMessages(supabase, userId, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
+      userQuery
+        ? GoogleContactsService.searchContacts(supabase, userId, userQuery).catch(() => [])
+        : GoogleContactsService.listContacts(supabase, userId, { pageSize: 10 }).then((res) => res.contacts).catch(() => []),
     ]);
 
     const nextMeeting = calendarEvents.find(
@@ -78,6 +84,7 @@ export async function buildAIContext(
       ...(nextMeeting ? { nextMeeting } : {}),
       freeSlotsToday,
       unreadEmails: unreadEmailRes.messages ?? [],
+      relevantContacts: contactsRes.slice(0, 5),
     };
   } catch (err) {
     logger.error("ai_request", "Failed to build AI context", { error: String(err) }, userId);
@@ -90,6 +97,7 @@ export async function buildAIContext(
       todaysEvents: [],
       freeSlotsToday: [],
       unreadEmails: [],
+      relevantContacts: [],
     };
   }
 }

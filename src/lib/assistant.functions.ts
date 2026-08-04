@@ -1,9 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { GoogleCalendarService } from "@/features/calendar/services.server";
 import { GmailService } from "@/features/gmail/services.server";
+import { GoogleContactsService } from "@/features/contacts/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
+import type { GoogleContact, ListContactsOptions } from "@/features/contacts/types";
 
 export type TaskRow = {
   id: string;
@@ -39,7 +41,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -62,6 +64,7 @@ export async function getWorkspace() {
       .limit(20),
     GoogleCalendarService.listEvents(supabase, userId, startToday, endToday).catch(() => []),
     GmailService.listMessages(supabase, userId, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
+    GoogleContactsService.listContacts(supabase, userId, { pageSize: 50 }).catch(() => ({ contacts: [] })),
   ]);
 
   const now = new Date();
@@ -77,6 +80,10 @@ export async function getWorkspace() {
     30
   ).catch(() => []);
 
+  const allContacts = contactsRes.contacts || [];
+  const favoriteContacts = allContacts.filter((c) => c.isFavorite);
+  const frequentlyContacted = allContacts.filter((c) => c.isFrequentlyContacted || c.lastSyncedAt);
+
   return {
     profile: profile.data ?? null,
     tasks: (tasks.data ?? []) as TaskRow[],
@@ -86,6 +93,9 @@ export async function getWorkspace() {
     nextMeeting,
     freeTimeToday,
     unreadEmails: unreadEmails.messages ?? [],
+    contacts: allContacts,
+    favoriteContacts,
+    frequentlyContacted,
   };
 }
 
@@ -399,4 +409,30 @@ export async function generateDailyBrief() {
   }
 
   return { brief };
+}
+
+// Contacts Client Helpers
+export async function fetchContacts(options: ListContactsOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  const res = await GoogleContactsService.listContacts(supabase, user.id, options);
+  return res.contacts;
+}
+
+export async function searchContacts(query: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleContactsService.searchContacts(supabase, user.id, query);
+}
+
+export async function getContactDetails(resourceName: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleContactsService.getContact(supabase, user.id, resourceName);
+}
+
+export async function toggleFavoriteContact(resourceName: string, isFavorite: boolean) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return GoogleContactsService.updateContactMetadata(supabase, user.id, resourceName, { isFavorite });
 }
