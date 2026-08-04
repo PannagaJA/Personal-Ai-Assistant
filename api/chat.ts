@@ -1,9 +1,15 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { handleChatPost } from "../src/routes/api/chat";
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
@@ -20,7 +26,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const bodyText = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    // Read raw body stream from Vercel Node request
+    const buffers: Uint8Array[] = [];
+    for await (const chunk of req) {
+      buffers.push(chunk);
+    }
+    const bodyText = Buffer.concat(buffers).toString("utf-8");
 
     const webReq = new Request(fullUrl, {
       method: "POST",
@@ -47,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.end();
     }
   } catch (err: any) {
-    console.error("[Vercel API] Error in /api/chat:", err);
-    return res.status(500).send(err?.message || "Internal Server Error");
+    console.error("[Vercel API Error /api/chat]:", err);
+    return res.status(500).json({ error: err?.message || String(err) });
   }
 }
