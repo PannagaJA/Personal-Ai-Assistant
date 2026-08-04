@@ -51,14 +51,24 @@ export class FcmNotificationProvider implements INotificationProvider {
       logger.info("system", "FCM token registered", { tokenLength: this.token?.length });
 
       // Handle foreground messages
-      onMessage(messaging, (payload) => {
+      onMessage(messaging, async (payload) => {
         logger.info("system", "FCM foreground message", { title: payload.notification?.title });
-        // Show browser notification for foreground messages
         if (Notification.permission === "granted" && payload.notification) {
-          new Notification(payload.notification.title || "Jarvis", {
+          const title = payload.notification.title || "Jarvis";
+          const options = {
             body: payload.notification.body || "",
             icon: "/favicon.ico",
-          });
+            badge: "/favicon.ico",
+          };
+
+          if ("serviceWorker" in navigator) {
+            const swReg = await navigator.serviceWorker.ready;
+            if (swReg && "showNotification" in swReg) {
+              await swReg.showNotification(title, options);
+              return;
+            }
+          }
+          new Notification(title, options);
         }
       });
 
