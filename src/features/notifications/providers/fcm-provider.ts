@@ -3,7 +3,15 @@ import type { INotificationProvider, NotificationItem } from "../types.js";
 import { getFirebaseMessaging } from "../../../lib/firebase.js";
 import { logger } from "../../../services/logger.js";
 
-const VAPID_KEY = import.meta.env["VITE_FIREBASE_VAPID_KEY"] as string | undefined;
+function getVapidKey(): string | undefined {
+  if (typeof process !== "undefined" && process.env?.["VITE_FIREBASE_VAPID_KEY"]) {
+    return process.env["VITE_FIREBASE_VAPID_KEY"];
+  }
+  if (typeof import.meta !== "undefined" && (import.meta as any).env?.["VITE_FIREBASE_VAPID_KEY"]) {
+    return (import.meta as any).env["VITE_FIREBASE_VAPID_KEY"];
+  }
+  return undefined;
+}
 
 export class FcmNotificationProvider implements INotificationProvider {
   public id = "fcm" as const;
@@ -12,11 +20,12 @@ export class FcmNotificationProvider implements INotificationProvider {
   private token: string | null = null;
 
   public isAvailable(): boolean {
+    const vapidKey = getVapidKey();
     return (
       typeof window !== "undefined" &&
       "serviceWorker" in navigator &&
-      Boolean(VAPID_KEY) &&
-      VAPID_KEY !== "your-vapid-key-here"
+      Boolean(vapidKey) &&
+      vapidKey !== "your-vapid-key-here"
     );
   }
 
@@ -43,8 +52,9 @@ export class FcmNotificationProvider implements INotificationProvider {
       const messaging = getFirebaseMessaging();
       if (!messaging) return null;
 
+      const vapidKey = getVapidKey();
       this.token = await getToken(messaging, {
-        vapidKey: VAPID_KEY!,
+        vapidKey: vapidKey!,
         serviceWorkerRegistration: registration,
       });
 
