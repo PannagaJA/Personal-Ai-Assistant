@@ -58,7 +58,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.end();
     }
   } catch (err: any) {
-    console.error("[Vercel API Error /api/chat]:", err);
-    return res.status(500).json({ error: err?.message || String(err) });
+    console.error("[Vercel API Error /api/chat]:", err?.stack || err);
+    return res.status(500).json({
+      error: err?.message || String(err),
+      stack: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+    });
   }
 }

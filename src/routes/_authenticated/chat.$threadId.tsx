@@ -35,12 +35,24 @@ const suggestions = [
 ];
 
 function authedFetch(input: RequestInfo | URL, init?: RequestInit) {
-  return supabase.auth.getSession().then(({ data }) => {
+  return supabase.auth.getSession().then(async ({ data }) => {
     const headers = new Headers(init?.headers);
     if (data.session?.access_token) {
       headers.set("Authorization", `Bearer ${data.session.access_token}`);
     }
-    return fetch(input, { ...init, headers });
+    const response = await fetch(input, { ...init, headers });
+    if (!response.ok) {
+      const text = await response.text();
+      let errorMsg = response.statusText;
+      try {
+        const json = JSON.parse(text);
+        errorMsg = json.error || json.message || text;
+      } catch {
+        errorMsg = text || response.statusText;
+      }
+      throw new Error(`[${response.status}] ${errorMsg}`);
+    }
+    return response;
   });
 }
 
