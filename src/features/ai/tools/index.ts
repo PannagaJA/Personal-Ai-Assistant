@@ -61,6 +61,21 @@ import {
   followupsHistoryTool,
   followupsRelatedTool,
 } from "@/features/followups/tools";
+import {
+  plannerDailyTool,
+  plannerWeeklyTool,
+  plannerTodayTool,
+  plannerTomorrowTool,
+  plannerPrioritiesTool,
+  plannerScheduleTool,
+  plannerRisksTool,
+  plannerWorkloadTool,
+  plannerSummaryTool,
+  plannerReviewTool,
+  plannerNextTaskTool,
+  plannerTimeblockTool,
+  plannerSuggestTool,
+} from "@/features/planner/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -132,4 +147,19 @@ export function initializeToolRegistry() {
   registry.register(followupsTimelineTool);
   registry.register(followupsHistoryTool);
   registry.register(followupsRelatedTool);
+
+  // AI Planning & Daily Intelligence Tools (13 total)
+  registry.register(plannerDailyTool);
+  registry.register(plannerWeeklyTool);
+  registry.register(plannerTodayTool);
+  registry.register(plannerTomorrowTool);
+  registry.register(plannerPrioritiesTool);
+  registry.register(plannerScheduleTool);
+  registry.register(plannerRisksTool);
+  registry.register(plannerWorkloadTool);
+  registry.register(plannerSummaryTool);
+  registry.register(plannerReviewTool);
+  registry.register(plannerNextTaskTool);
+  registry.register(plannerTimeblockTool);
+  registry.register(plannerSuggestTool);
 }

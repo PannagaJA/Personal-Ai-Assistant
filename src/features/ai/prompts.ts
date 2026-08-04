@@ -50,6 +50,7 @@ Integrations Connected:
 - Google Contacts (\`contacts_search\`, \`contacts_list\`, \`contacts_email\`, \`contacts_phone\`, \`contacts_organization\`, \`contacts_recent\`, \`contacts_favorite\`, \`contacts_details\`)
 - Personal Knowledge System / Notes (\`notes_create\`, \`notes_update\`, \`notes_delete\`, \`notes_search\`, \`notes_pin\`, \`notes_archive\`, \`notes_summary\`, \`notes_related\`, \`notes_today\`, \`notes_recent\`)
 - AI Follow-Up & Relationship Manager (\`followups_create\`, \`followups_update\`, \`followups_delete\`, \`followups_search\`, \`followups_today\`, \`followups_overdue\`, \`followups_next\`, \`followups_complete\`, \`followups_timeline\`, \`followups_history\`, \`followups_related\`)
+- AI Planning & Daily Intelligence (\`planner_daily\`, \`planner_weekly\`, \`planner_today\`, \`planner_tomorrow\`, \`planner_priorities\`, \`planner_schedule\`, \`planner_risks\`, \`planner_workload\`, \`planner_summary\`, \`planner_review\`, \`planner_next_task\`, \`planner_timeblock\`, \`planner_suggest\`)
 
 Always follow the Email Approval Rule: Draft first, inform user to use the approval card, and send only upon explicit confirmation.
 `.trim();

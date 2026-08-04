@@ -22,6 +22,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import { MorningBriefCard } from "@/features/planner/components/MorningBriefCard";
 import {
   deleteTask,
   generateDailyBrief,
@@ -108,6 +109,8 @@ export default function Dashboard() {
   const pendingFollowUps = workspace.data?.pendingFollowUps ?? [];
   const overdueFollowUps = workspace.data?.overdueFollowUps ?? [];
   const todaysFollowUps = workspace.data?.todaysFollowUps ?? [];
+  const morningBrief = workspace.data?.morningBrief;
+  const dailyTimeline = workspace.data?.dailyTimeline ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -130,6 +133,12 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild>
+              <Link to="/planner">
+                <Sparkles className="size-4 text-primary" />
+                AI Planner
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link to="/gmail">
                 <Mail className="size-4" />
                 Gmail
@@ -150,30 +159,36 @@ export default function Dashboard() {
           </div>
         </motion.header>
 
-        {/* Daily Briefing Card */}
-        <section className="glass-panel mt-8 rounded-xl p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold">Daily brief</h2>
+        {/* AI Morning Intelligence Briefing */}
+        {morningBrief ? (
+          <div className="mt-8">
+            <MorningBriefCard brief={morningBrief} />
+          </div>
+        ) : (
+          <section className="glass-panel mt-8 rounded-xl p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" />
+                <h2 className="text-sm font-semibold">Daily brief</h2>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => brief.mutate()}
+                disabled={brief.isPending}
+              >
+                {brief.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                {brief.data ? "Regenerate" : "Generate"}
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => brief.mutate()}
-              disabled={brief.isPending}
-            >
-              {brief.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {brief.data ? "Regenerate" : "Generate"}
-            </Button>
-          </div>
-          <div className="mt-3 text-sm whitespace-pre-wrap text-muted-foreground">
-            {brief.isPending
-              ? "Reading your emails, schedule and tasks…"
-              : (brief.data?.brief ??
-                "Generate a briefing to see unread emails, today's schedule, priority tasks, and smart suggestions.")}
-          </div>
-        </section>
+            <div className="mt-3 text-sm whitespace-pre-wrap text-muted-foreground">
+              {brief.isPending
+                ? "Reading your emails, schedule and tasks…"
+                : (brief.data?.brief ??
+                  "Generate a briefing to see unread emails, today's schedule, priority tasks, and smart suggestions.")}
+            </div>
+          </section>
+        )}
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           {/* Left Column: Tasks & Unread Email Widget */}

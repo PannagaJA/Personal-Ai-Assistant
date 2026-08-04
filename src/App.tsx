@@ -16,6 +16,7 @@ import GmailPage from "@/routes/_authenticated/gmail";
 import ContactsPage from "@/routes/_authenticated/contacts";
 import NotesPage from "@/routes/_authenticated/notes";
 import FollowUpsPage from "@/routes/_authenticated/followups";
+import PlannerPage from "@/routes/_authenticated/planner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,7 @@ export function App() {
 
             <Route element={<ProtectedLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/planner" element={<PlannerPage />} />
               <Route path="/chat" element={<ChatEntry />} />
               <Route path="/chat/:threadId" element={<ChatPage />} />
               <Route path="/calendar" element={<CalendarPage />} />

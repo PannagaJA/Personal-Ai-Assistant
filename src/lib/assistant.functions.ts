@@ -4,12 +4,14 @@ import { GmailService } from "@/features/gmail/services.server";
 import { GoogleContactsService } from "@/features/contacts/services.server";
 import { NotesService } from "@/features/notes/services.server";
 import { FollowUpsService } from "@/features/followups/services.server";
+import { PlannerService } from "@/features/planner/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
 import type { GoogleContact, ListContactsOptions } from "@/features/contacts/types";
 import type { UserNote, ListNotesOptions } from "@/features/notes/types";
 import type { FollowUpItem, ListFollowUpsOptions } from "@/features/followups/types";
+import type { MorningBrief, EveningReview, DailyTimelineItem } from "@/features/planner/types";
 
 export type TaskRow = {
   id: string;
@@ -45,7 +47,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups, morningBrief, dailyTimeline] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -71,6 +73,8 @@ export async function getWorkspace() {
     GoogleContactsService.listContacts(supabase, userId, { pageSize: 50 }).catch(() => ({ contacts: [] })),
     NotesService.listNotes(supabase, userId, { limit: 20 }).catch(() => []),
     FollowUpsService.listFollowUps(supabase, userId, { limit: 30 }).catch(() => []),
+    PlannerService.generateMorningBrief(supabase, userId).catch(() => null),
+    PlannerService.getDailyTimeline(supabase, userId).catch(() => []),
   ]);
 
   const now = new Date();
@@ -117,6 +121,8 @@ export async function getWorkspace() {
     pendingFollowUps,
     overdueFollowUps,
     todaysFollowUps,
+    morningBrief,
+    dailyTimeline,
   };
 }
 
@@ -551,4 +557,23 @@ export async function fetchRelationshipTimeline(personOrOrg: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return FollowUpsService.getRelationshipTimeline(supabase, user.id, personOrOrg);
+}
+
+// AI Planner & Daily Intelligence Client Helpers
+export async function fetchMorningBrief(dateStr?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return PlannerService.generateMorningBrief(supabase, user.id, dateStr ? { dateStr } : {});
+}
+
+export async function fetchEveningReview(dateStr?: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return PlannerService.generateEveningReview(supabase, user.id, dateStr ? { dateStr } : {});
+}
+
+export async function fetchDailyTimeline() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return PlannerService.getDailyTimeline(supabase, user.id);
 }
