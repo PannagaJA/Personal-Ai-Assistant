@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { GoogleAuthService } from "@/services/google-auth.server";
-import { logger } from "@/services/logger";
+import { GoogleAuthService } from "../../services/google-auth.server.js";
+import { logger } from "../../services/logger.js";
 import type { GoogleContact, ListContactsOptions } from "./types";
 import { getPrimaryEmail, getPrimaryName, getPrimaryOrganization, getPrimaryPhone } from "./utils";
 

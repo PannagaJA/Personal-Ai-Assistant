@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/services/logger";
-import { GoogleCalendarService } from "@/features/calendar/services.server";
-import { GmailService } from "@/features/gmail/services.server";
-import { NotesService } from "@/features/notes/services.server";
-import { FollowUpsService } from "@/features/followups/services.server";
-import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
+import { logger } from "../../services/logger.js";
+import { GoogleCalendarService } from "../calendar/services.server.js";
+import { GmailService } from "../gmail/services.server.js";
+import { NotesService } from "../notes/services.server.js";
+import { FollowUpsService } from "../followups/services.server.js";
+import { getStartOfDayIso, getEndOfDayIso } from "../calendar/utils.js";
 import type {
   MorningBrief,
   EveningReview,

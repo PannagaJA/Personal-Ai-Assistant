@@ -1,16 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/services/logger";
-import { GoogleCalendarService } from "@/features/calendar/services.server";
-import { GmailService } from "@/features/gmail/services.server";
-import { GoogleContactsService } from "@/features/contacts/services.server";
-import { NotesService } from "@/features/notes/services.server";
-import { FollowUpsService } from "@/features/followups/services.server";
-import type { CalendarEvent, FreeTimeSlot } from "@/features/calendar/types";
-import type { GmailMessage } from "@/features/gmail/types";
-import type { GoogleContact } from "@/features/contacts/types";
-import type { UserNote } from "@/features/notes/types";
-import type { FollowUpItem } from "@/features/followups/types";
-import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
+import { logger } from "../../services/logger.js";
+import { GoogleCalendarService } from "../calendar/services.server.js";
+import { GmailService } from "../gmail/services.server.js";
+import { GoogleContactsService } from "../contacts/services.server.js";
+import { NotesService } from "../notes/services.server.js";
+import { FollowUpsService } from "../followups/services.server.js";
+import type { CalendarEvent, FreeTimeSlot } from "../calendar/types.js";
+import type { GmailMessage } from "../gmail/types.js";
+import type { GoogleContact } from "../contacts/types.js";
+import type { UserNote } from "../notes/types.js";
+import type { FollowUpItem } from "../followups/types.js";
+import { getStartOfDayIso, getEndOfDayIso } from "../calendar/utils.js";
 
 export interface AIContext {
   userId: string;

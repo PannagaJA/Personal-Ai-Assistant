@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AITool } from "@/features/ai/tools/registry";
+import type { AITool } from "../../ai/tools/registry.js";
 import { PlannerService } from "../services.server";
 
 export const plannerDailyTool: AITool = {

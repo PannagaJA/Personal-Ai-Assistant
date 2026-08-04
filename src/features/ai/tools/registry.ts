@@ -1,7 +1,7 @@
 import { tool as vercelTool, type Tool as VercelTool } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/services/logger";
+import { logger } from "../../../services/logger.js";
 
 export interface ToolExecutionContext {
   supabase: SupabaseClient;

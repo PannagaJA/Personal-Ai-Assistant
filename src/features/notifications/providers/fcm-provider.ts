@@ -1,7 +1,7 @@
 import { getToken, onMessage } from "firebase/messaging";
 import type { INotificationProvider, NotificationItem } from "../types";
-import { getFirebaseMessaging } from "@/lib/firebase";
-import { logger } from "@/services/logger";
+import { getFirebaseMessaging } from "../../../lib/firebase.js";
+import { logger } from "../../../services/logger.js";
 
 const VAPID_KEY = import.meta.env["VITE_FIREBASE_VAPID_KEY"] as string | undefined;
 

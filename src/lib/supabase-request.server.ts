@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database } from "../integrations/supabase/types.js";
 
 function isNewSupabaseApiKey(value: string) {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");

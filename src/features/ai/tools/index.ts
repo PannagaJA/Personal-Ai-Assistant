@@ -1,6 +1,6 @@
-import { registry } from "./registry";
-import { listTasksTool, createTaskTool, completeTaskTool, dailyOverviewTool } from "@/features/tasks/tools";
-import { rememberTool, searchMemoryTool } from "@/features/memory/tools";
+import { registry } from "./registry.js";
+import { listTasksTool, createTaskTool, completeTaskTool, dailyOverviewTool } from "../../tasks/tools.js";
+import { rememberTool, searchMemoryTool } from "../../memory/tools.js";
 import {
   listTodayEventsTool,
   listTomorrowEventsTool,
@@ -12,7 +12,7 @@ import {
   findFreeTimeTool,
   detectConflictsTool,
   getNextEventTool,
-} from "@/features/calendar/tools";
+} from "../../calendar/tools.js";
 import {
   listUnreadGmailTool,
   searchGmailTool,
@@ -25,7 +25,7 @@ import {
   markUnreadGmailTool,
   listLabelsGmailTool,
   getThreadGmailTool,
-} from "@/features/gmail/tools";
+} from "../../gmail/tools.js";
 import {
   contactsSearchTool,
   contactsListTool,
@@ -35,7 +35,7 @@ import {
   contactsRecentTool,
   contactsFavoriteTool,
   contactsDetailsTool,
-} from "@/features/contacts/tools";
+} from "../../contacts/tools/index.js";
 import {
   notesCreateTool,
   notesUpdateTool,
@@ -47,7 +47,7 @@ import {
   notesRelatedTool,
   notesTodayTool,
   notesRecentTool,
-} from "@/features/notes/tools";
+} from "../../notes/tools/index.js";
 import {
   followupsCreateTool,
   followupsUpdateTool,
@@ -60,7 +60,7 @@ import {
   followupsTimelineTool,
   followupsHistoryTool,
   followupsRelatedTool,
-} from "@/features/followups/tools";
+} from "../../followups/tools/index.js";
 import {
   plannerDailyTool,
   plannerWeeklyTool,
@@ -75,7 +75,7 @@ import {
   plannerNextTaskTool,
   plannerTimeblockTool,
   plannerSuggestTool,
-} from "@/features/planner/tools";
+} from "../../planner/tools/index.js";
 import {
   automationCreateTool,
   automationUpdateTool,
@@ -87,7 +87,7 @@ import {
   automationHistoryTool,
   automationLogsTool,
   automationDefaultTool,
-} from "@/features/automation/tools";
+} from "../../automation/tools/index.js";
 import {
   notificationsListTool,
   notificationsReadTool,
@@ -101,7 +101,7 @@ import {
   notificationsPriorityTool,
   notificationsSendTool,
   notificationsTestTool,
-} from "@/features/notifications/tools";
+} from "../../notifications/tools/index.js";
 
 export function initializeToolRegistry() {
   // Tasks Tools

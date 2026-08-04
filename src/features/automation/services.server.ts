@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/services/logger";
-import { PlannerService } from "@/features/planner/services.server";
-import { NotesService } from "@/features/notes/services.server";
-import { FollowUpsService } from "@/features/followups/services.server";
+import { logger } from "../../services/logger.js";
+import { PlannerService } from "../planner/services.server.js";
+import { NotesService } from "../notes/services.server.js";
+import { FollowUpsService } from "../followups/services.server.js";
 import type {
   AutomationItem,
   AutomationRun,

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { logger } from "@/services/logger";
+import { logger } from "../../services/logger.js";
 import type {
   FollowUpItem,
   FollowUpHistory,

@@ -1,11 +1,11 @@
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
-import { getAIModel } from "@/lib/ai-provider.server";
-import { getUserClientFromRequest } from "@/lib/supabase-request.server";
-import { registry, type ToolExecutionContext } from "@/features/ai/tools/registry";
-import { initializeToolRegistry } from "@/features/ai/tools";
-import { buildAIContext } from "@/features/ai/context-builder";
-import { systemPrompt } from "@/features/ai/prompts";
-import { logger } from "@/services/logger";
+import { getAIModel } from "../../lib/ai-provider.server.js";
+import { getUserClientFromRequest } from "../../lib/supabase-request.server.js";
+import { registry, type ToolExecutionContext } from "../../features/ai/tools/registry.js";
+import { initializeToolRegistry } from "../../features/ai/tools/index.js";
+import { buildAIContext } from "../../features/ai/context-builder.js";
+import { systemPrompt } from "../../features/ai/prompts.js";
+import { logger } from "../../services/logger.js";
 
 initializeToolRegistry();
 
