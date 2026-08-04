@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
+  AlertCircle,
   ArrowUpRight,
   BookOpen,
   Brain,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   Circle,
   Clock,
+  HeartPulse,
   Loader2,
   Mail,
   Pin,
@@ -103,6 +105,9 @@ export default function Dashboard() {
   const notes = workspace.data?.notes ?? [];
   const pinnedNotes = workspace.data?.pinnedNotes ?? [];
   const recentNotes = workspace.data?.recentNotes ?? [];
+  const pendingFollowUps = workspace.data?.pendingFollowUps ?? [];
+  const overdueFollowUps = workspace.data?.overdueFollowUps ?? [];
+  const todaysFollowUps = workspace.data?.todaysFollowUps ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -495,6 +500,75 @@ export default function Dashboard() {
                             <p className="truncate text-muted-foreground">{note.category}</p>
                           </div>
                           <span className="text-[10px] text-primary hover:underline shrink-0">Read</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* AI Follow-Up & Relationship Manager Widget */}
+            <section className="glass-panel rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HeartPulse className="size-4 text-primary" />
+                  <h2 className="text-sm font-semibold">AI Follow-Up & Relationships</h2>
+                </div>
+                <Link to="/followups" className="text-xs text-primary hover:underline">
+                  View all ({pendingFollowUps.length})
+                </Link>
+              </div>
+
+              {pendingFollowUps.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  No pending follow-ups. Jarvis will remind you after meetings & emails.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {overdueFollowUps.length > 0 ? (
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-400 mb-1.5 flex items-center gap-1">
+                        <AlertCircle className="size-3 text-rose-400" /> Overdue Follow-Ups ({overdueFollowUps.length})
+                      </p>
+                      <div className="space-y-1.5">
+                        {overdueFollowUps.slice(0, 3).map((item) => (
+                          <Link
+                            key={item.id}
+                            to="/followups"
+                            className="flex items-center justify-between rounded-md border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 text-xs transition hover:bg-rose-500/20"
+                          >
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="truncate font-semibold text-foreground">{item.title}</p>
+                              <p className="truncate text-muted-foreground">
+                                {item.personName || item.organizationName || "General"}
+                              </p>
+                            </div>
+                            <span className="text-[10px] text-rose-400 font-bold shrink-0">Action Needed</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Upcoming & Scheduled
+                    </p>
+                    <div className="space-y-1.5">
+                      {pendingFollowUps.slice(0, 3).map((item) => (
+                        <Link
+                          key={item.id}
+                          to="/followups"
+                          className="flex items-center justify-between rounded-md bg-accent/30 px-2.5 py-1.5 text-xs transition hover:bg-accent/60"
+                        >
+                          <div className="min-w-0 flex-1 pr-2">
+                            <p className="truncate font-medium text-foreground">{item.title}</p>
+                            <p className="truncate text-muted-foreground">
+                              {item.personName || item.organizationName || "General"}
+                            </p>
+                          </div>
+                          <span className="text-[10px] text-primary hover:underline shrink-0">View</span>
                         </Link>
                       ))}
                     </div>

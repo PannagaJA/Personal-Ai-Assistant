@@ -15,6 +15,7 @@ import CalendarPage from "@/routes/_authenticated/calendar";
 import GmailPage from "@/routes/_authenticated/gmail";
 import ContactsPage from "@/routes/_authenticated/contacts";
 import NotesPage from "@/routes/_authenticated/notes";
+import FollowUpsPage from "@/routes/_authenticated/followups";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,7 @@ export function App() {
               <Route path="/gmail" element={<GmailPage />} />
               <Route path="/contacts" element={<ContactsPage />} />
               <Route path="/notes" element={<NotesPage />} />
+              <Route path="/followups" element={<FollowUpsPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

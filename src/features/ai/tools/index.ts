@@ -48,6 +48,19 @@ import {
   notesTodayTool,
   notesRecentTool,
 } from "@/features/notes/tools";
+import {
+  followupsCreateTool,
+  followupsUpdateTool,
+  followupsDeleteTool,
+  followupsSearchTool,
+  followupsTodayTool,
+  followupsOverdueTool,
+  followupsNextTool,
+  followupsCompleteTool,
+  followupsTimelineTool,
+  followupsHistoryTool,
+  followupsRelatedTool,
+} from "@/features/followups/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -106,4 +119,17 @@ export function initializeToolRegistry() {
   registry.register(notesRelatedTool);
   registry.register(notesTodayTool);
   registry.register(notesRecentTool);
+
+  // Follow-Up & Relationship Manager Tools (11 total)
+  registry.register(followupsCreateTool);
+  registry.register(followupsUpdateTool);
+  registry.register(followupsDeleteTool);
+  registry.register(followupsSearchTool);
+  registry.register(followupsTodayTool);
+  registry.register(followupsOverdueTool);
+  registry.register(followupsNextTool);
+  registry.register(followupsCompleteTool);
+  registry.register(followupsTimelineTool);
+  registry.register(followupsHistoryTool);
+  registry.register(followupsRelatedTool);
 }

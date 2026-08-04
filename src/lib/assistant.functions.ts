@@ -3,11 +3,13 @@ import { GoogleCalendarService } from "@/features/calendar/services.server";
 import { GmailService } from "@/features/gmail/services.server";
 import { GoogleContactsService } from "@/features/contacts/services.server";
 import { NotesService } from "@/features/notes/services.server";
+import { FollowUpsService } from "@/features/followups/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
 import type { GoogleContact, ListContactsOptions } from "@/features/contacts/types";
 import type { UserNote, ListNotesOptions } from "@/features/notes/types";
+import type { FollowUpItem, ListFollowUpsOptions } from "@/features/followups/types";
 
 export type TaskRow = {
   id: string;
@@ -43,7 +45,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -68,6 +70,7 @@ export async function getWorkspace() {
     GmailService.listMessages(supabase, userId, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
     GoogleContactsService.listContacts(supabase, userId, { pageSize: 50 }).catch(() => ({ contacts: [] })),
     NotesService.listNotes(supabase, userId, { limit: 20 }).catch(() => []),
+    FollowUpsService.listFollowUps(supabase, userId, { limit: 30 }).catch(() => []),
   ]);
 
   const now = new Date();
@@ -90,6 +93,11 @@ export async function getWorkspace() {
   const pinnedNotes = notes.filter((n) => n.isPinned);
   const recentNotes = notes.slice(0, 5);
 
+  const todayStr = now.toISOString().split("T")[0] || "";
+  const pendingFollowUps = followups.filter((f) => f.status === "pending");
+  const overdueFollowUps = pendingFollowUps.filter((f) => f.followupDate && new Date(f.followupDate).getTime() < now.getTime());
+  const todaysFollowUps = pendingFollowUps.filter((f) => Boolean(f.followupDate && f.followupDate.startsWith(todayStr)));
+
   return {
     profile: profile.data ?? null,
     tasks: (tasks.data ?? []) as TaskRow[],
@@ -105,6 +113,10 @@ export async function getWorkspace() {
     notes,
     pinnedNotes,
     recentNotes,
+    followups,
+    pendingFollowUps,
+    overdueFollowUps,
+    todaysFollowUps,
   };
 }
 
@@ -496,4 +508,47 @@ export async function fetchNoteVersions(noteId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return NotesService.getNoteVersions(supabase, noteId);
+}
+
+// Follow-Up & Relationship Manager Client Helpers
+export async function fetchFollowUps(options: ListFollowUpsOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return FollowUpsService.listFollowUps(supabase, user.id, options);
+}
+
+export async function saveFollowUp(payload: {
+  id?: string;
+  title: string;
+  personName?: string;
+  organizationName?: string;
+  category?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
+  status?: "pending" | "completed" | "cancelled" | "snoozed";
+  followupDate?: string;
+  notes?: string;
+  tags?: string[];
+  links?: Array<{ entityType: string; entityId: string; entityTitle: string }>;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return FollowUpsService.upsertFollowUp(supabase, user.id, payload);
+}
+
+export async function markFollowUpComplete(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return FollowUpsService.completeFollowUp(supabase, user.id, id);
+}
+
+export async function removeFollowUp(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return FollowUpsService.deleteFollowUp(supabase, user.id, id);
+}
+
+export async function fetchRelationshipTimeline(personOrOrg: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return FollowUpsService.getRelationshipTimeline(supabase, user.id, personOrOrg);
 }

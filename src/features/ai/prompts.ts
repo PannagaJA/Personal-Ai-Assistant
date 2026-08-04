@@ -35,10 +35,12 @@ Active Context Snapshot:
 - Unread Emails Count: ${context.unreadEmails?.length ?? 0}
 - Relevant Contacts Count: ${context.relevantContacts?.length ?? 0}
 - Relevant Notes Count: ${context.relevantNotes?.length ?? 0}
+- Pending Follow-Ups Count: ${context.pendingFollowUps?.length ?? 0}
 ${context.nextMeeting ? `- Next Scheduled Meeting: "${context.nextMeeting.summary}" at ${context.nextMeeting.start.dateTime || context.nextMeeting.start.date}` : ""}
 ${context.unreadEmails?.length > 0 ? `- Recent Unread Email Snippets: ${context.unreadEmails.slice(0, 3).map((e) => `"${e.subject}" from ${e.from}`).join("; ")}` : ""}
 ${context.relevantContacts?.length > 0 ? `- Relevant Contacts Context: ${context.relevantContacts.slice(0, 3).map((c) => (c.names?.[0]?.displayName || c.emails?.[0]?.value || "Contact")).join(", ")}` : ""}
 ${context.relevantNotes?.length > 0 ? `- Relevant Notes Context: ${context.relevantNotes.slice(0, 3).map((n) => `"${n.title}" (${n.category})`).join("; ")}` : ""}
+${context.pendingFollowUps?.length > 0 ? `- Pending Follow-Ups Context: ${context.pendingFollowUps.slice(0, 3).map((f) => `"${f.title}" (${f.personName || f.organizationName || "General"})`).join("; ")}` : ""}
 ${context.pendingTasks.length > 0 ? `- Top Pending Tasks: ${context.pendingTasks.slice(0, 3).map((t) => t.title).join(", ")}` : ""}
 ${context.relevantMemories.length > 0 ? `- Relevant Memories: ${context.relevantMemories.map((m) => m.title).join("; ")}` : ""}
 
@@ -47,6 +49,7 @@ Integrations Connected:
 - Google Gmail (\`gmail_list_unread\`, \`gmail_search\`, \`gmail_read\`, \`gmail_summary\`, \`gmail_send\`, \`gmail_reply\`, \`gmail_create_draft\`, \`gmail_archive\`, \`gmail_mark_read\`, \`gmail_mark_unread\`, \`gmail_labels\`, \`gmail_thread\`)
 - Google Contacts (\`contacts_search\`, \`contacts_list\`, \`contacts_email\`, \`contacts_phone\`, \`contacts_organization\`, \`contacts_recent\`, \`contacts_favorite\`, \`contacts_details\`)
 - Personal Knowledge System / Notes (\`notes_create\`, \`notes_update\`, \`notes_delete\`, \`notes_search\`, \`notes_pin\`, \`notes_archive\`, \`notes_summary\`, \`notes_related\`, \`notes_today\`, \`notes_recent\`)
+- AI Follow-Up & Relationship Manager (\`followups_create\`, \`followups_update\`, \`followups_delete\`, \`followups_search\`, \`followups_today\`, \`followups_overdue\`, \`followups_next\`, \`followups_complete\`, \`followups_timeline\`, \`followups_history\`, \`followups_related\`)
 
 Always follow the Email Approval Rule: Draft first, inform user to use the approval card, and send only upon explicit confirmation.
 `.trim();

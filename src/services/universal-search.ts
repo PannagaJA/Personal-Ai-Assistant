@@ -133,3 +133,27 @@ searchRegistry.register({
     }));
   },
 });
+
+// 5. Follow-Ups & Relationship Manager Search Provider
+searchRegistry.register({
+  name: "followups",
+  async search(supabase, userId, query) {
+    const like = `%${query}%`;
+    const { data } = await (supabase.from as any)("user_followups")
+      .select("id, title, person_name, organization_name, priority, status, followup_date, created_at")
+      .eq("user_id", userId)
+      .or(`title.ilike.${like},person_name.ilike.${like},organization_name.ilike.${like},notes.ilike.${like}`)
+      .order("followup_date", { ascending: true, nullsFirst: false })
+      .limit(8);
+
+    return (data ?? []).map((item: any) => ({
+      id: item.id,
+      module: "notes", // group in knowledge / relation results
+      title: item.title,
+      subtitle: `Followup: ${item.person_name || item.organization_name || "General"} | Status: ${item.status}`,
+      content: item.followup_date ? `Due: ${new Date(item.followup_date).toLocaleDateString()}` : undefined,
+      url: `/followups`,
+      createdAt: item.created_at,
+    }));
+  },
+});
