@@ -1,25 +1,27 @@
-import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModel } from "ai";
 
-export type SupportedAIProvider = "openrouter" | "google" | "openai";
+export type SupportedAIProvider = "google" | "openrouter";
 
 /**
- * Returns a standardized Vercel AI SDK LanguageModel based on configured environment variables.
- * Uses OpenRouter model routing for fast and efficient tool calling execution.
+ * Returns a standardized Vercel AI SDK LanguageModel using OpenRouter or Google's official Gemini API.
  */
-export function getAIModel(preferredProvider?: SupportedAIProvider): LanguageModel {
-  const openrouterKey = process.env["OPENROUTER_API_KEY"];
-  const geminiKey = process.env["GEMINI_API_KEY"];
-  const openaiKey = process.env["OPENAI_API_KEY"];
+export function getAIModel(): LanguageModel {
+  const openrouterKey =
+    process.env["OPENROUTER_API_KEY"] ||
+    process.env["VITE_OPENROUTER_API_KEY"] ||
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_OPENROUTER_API_KEY) ||
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.OPENROUTER_API_KEY);
 
-  const isOpenRouterValid = openrouterKey && openrouterKey !== "your-openrouter-api-key";
+  const geminiKey =
+    process.env["GEMINI_API_KEY"] ||
+    process.env["VITE_GEMINI_API_KEY"] ||
+    process.env["GOOGLE_GENERATIVE_AI_API_KEY"] ||
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_GEMINI_API_KEY) ||
+    (typeof import.meta !== "undefined" && (import.meta as any).env?.GEMINI_API_KEY);
 
-  if (preferredProvider === "openrouter" || isOpenRouterValid) {
-    if (!openrouterKey) {
-      throw new Error("OPENROUTER_API_KEY environment variable is missing.");
-    }
+  if (openrouterKey && openrouterKey !== "your-openrouter-api-key") {
     const openrouter = createOpenAICompatible({
       name: "openrouter",
       apiKey: openrouterKey,
@@ -28,22 +30,28 @@ export function getAIModel(preferredProvider?: SupportedAIProvider): LanguageMod
         "HTTP-Referer": "https://personal-ai-assistant.local",
         "X-Title": "Personal AI Assistant",
       },
+      extraBody: {
+        models: [
+          "google/gemma-4-31b-it:free",
+          "openai/gpt-oss-20b:free",
+          "qwen/qwen3-next-80b-a3b-instruct:free",
+          "nvidia/nemotron-3-super-120b-a12b:free",
+          "deepseek/deepseek-v4-flash:free",
+          "cohere/north-mini-code:free",
+        ],
+      },
     });
-    return openrouter("google/gemini-2.5-flash") as unknown as LanguageModel;
-  }
-
-  if (preferredProvider === "openai" || (!geminiKey && openaiKey)) {
-    if (!openaiKey) {
-      throw new Error("OPENAI_API_KEY environment variable is missing.");
-    }
-    return openai("gpt-4o") as unknown as LanguageModel;
+    return openrouter("openai/gpt-oss-20b:free") as unknown as LanguageModel;
   }
 
   if (geminiKey && geminiKey !== "your-google-gemini-api-key") {
-    return google("gemini-2.5-flash") as unknown as LanguageModel;
+    const googleProvider = createGoogleGenerativeAI({
+      apiKey: geminiKey,
+    });
+    return googleProvider("gemini-1.5-flash-8b") as unknown as LanguageModel;
   }
 
   throw new Error(
-    "Missing AI provider credentials. Please set OPENROUTER_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY in your environment.",
+    "Missing AI provider credentials. Please set OPENROUTER_API_KEY or GEMINI_API_KEY in your environment.",
   );
 }

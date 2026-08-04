@@ -52,7 +52,10 @@ class ToolRegistry {
   toVercelTools(context: ToolExecutionContext): Record<string, VercelTool> {
     const vercelToolsMap: Record<string, VercelTool> = {};
 
-    for (const [id, toolDef] of this.tools.entries()) {
+    // Limit to 60 tools to satisfy model provider caps (e.g. OpenRouter 64-tool limit)
+    const entries = Array.from(this.tools.entries()).slice(0, 60);
+
+    for (const [id, toolDef] of entries) {
       const sanitizedId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
       vercelToolsMap[sanitizedId] = vercelTool({
         description: toolDef.description,
