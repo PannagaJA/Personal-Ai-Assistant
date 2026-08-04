@@ -83,8 +83,8 @@ export async function handleChatPost(request: Request) {
   let model;
   try {
     model = getAIModel();
-  } catch (e) {
-    const err = e instanceof Error ? e.message : "AI Provider error";
+  } catch (e: any) {
+    const err = e?.message || String(e);
     logger.error("provider", "Failed to get AI model", { error: err }, userId);
     return new Response(JSON.stringify({ error: err }), {
       status: 500,
