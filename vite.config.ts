@@ -117,6 +117,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          // Allow caching files up to 5 MiB (main bundle is ~2.34 MB)
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           // Cache strategy: StaleWhileRevalidate for pages, CacheFirst for assets
           runtimeCaching: [
             {
