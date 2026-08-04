@@ -1,12 +1,16 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Mail, Users, BookOpen, HeartPulse, Sparkles, Zap, Bell, Moon, Sun, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Calendar as CalendarIcon, Mail, Users, BookOpen, HeartPulse, Sparkles, Zap, Bell, Moon, Sun, LogOut, Download } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import jarvisMark from "@/assets/jarvis-mark.png";
+import { usePwa } from "@/features/pwa/hooks/use-pwa";
+import { PwaInstallBanner } from "@/features/pwa/components/PwaInstallBanner";
+import { PwaUpdatePrompt } from "@/features/pwa/components/PwaUpdatePrompt";
+import { OfflineStatusBar } from "@/features/pwa/components/OfflineStatusBar";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,6 +31,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const {
+    isOnline,
+    canInstall,
+    showInstallBanner,
+    needRefresh,
+    promptInstall,
+    dismissInstallBanner,
+    applyUpdate,
+  } = usePwa();
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -70,6 +84,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex w-full flex-col gap-1">
+          {/* Install PWA shortcut in sidebar */}
+          {canInstall && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={promptInstall}
+              className="justify-start gap-2.5 text-primary"
+            >
+              <Download className="size-4" />
+              <span className="hidden sm:inline">Install App</span>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={toggle} className="justify-start gap-2.5">
             {theme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
             <span className="hidden sm:inline">{theme === "dark" ? "Dark" : "Light"}</span>
@@ -81,10 +107,26 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="relative min-w-0 flex-1">
+      <main className="relative min-w-0 flex-1 flex flex-col">
+        {/* Offline banner at top of main content */}
+        <OfflineStatusBar isOnline={isOnline} />
+
         <div className="aurora pointer-events-none absolute inset-x-0 top-0 h-[380px]" />
-        <div className="relative">{children}</div>
+        <div className="relative flex-1">{children}</div>
       </main>
+
+      {/* PWA Install Banner (bottom of screen) */}
+      {showInstallBanner && (
+        <PwaInstallBanner onInstall={promptInstall} onDismiss={dismissInstallBanner} />
+      )}
+
+      {/* SW Update Prompt (top of screen) */}
+      {needRefresh && (
+        <PwaUpdatePrompt
+          onUpdate={applyUpdate}
+          onDismiss={() => {/* user can ignore */}}
+        />
+      )}
     </div>
   );
 }
