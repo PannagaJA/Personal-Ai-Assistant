@@ -284,27 +284,16 @@ function ChatWindow({
                           />
                         ) : null}
 
-                        {isPhoneTool && phoneResults.length > 0 ? (
-                          phoneResults.map((res, pIdx) => (
-                            <ContactCallCard
-                              key={pIdx}
-                              name={res.name || "Contact"}
-                              phone={res.phone || (res as any).phones?.[0]?.value || ""}
-                              type={(res as any).type || "Mobile"}
-                            />
-                          ))
-                        ) : (
-                          <Tool defaultOpen={false}>
-                            <ToolHeader type={toolPart.type} state={toolPart.state} />
-                            <ToolContent>
-                              <ToolInput input={toolPart.input} />
-                              <ToolOutput
-                                output={toolPart.output as never}
-                                errorText={toolPart.errorText as never}
+                        {isPhoneTool && phoneResults.length > 0
+                          ? phoneResults.map((res, pIdx) => (
+                              <ContactCallCard
+                                key={pIdx}
+                                name={res.name || "Contact"}
+                                phone={res.phone || (res as any).phones?.[0]?.value || ""}
+                                type={(res as any).type || "Mobile"}
                               />
-                            </ToolContent>
-                          </Tool>
-                        )}
+                            ))
+                          : null}
                       </div>
                     );
                   }
