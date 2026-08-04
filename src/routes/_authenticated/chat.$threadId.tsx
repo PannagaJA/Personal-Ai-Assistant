@@ -163,14 +163,65 @@ function ChatWindow({
     [threadId],
   );
 
+  useEffect(() => {
+    // Request notification permission and register FCM device token
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
+      import("@/features/notifications/providers/fcm-provider.js").then(({ FcmNotificationProvider }) => {
+        const fcm = new FcmNotificationProvider();
+        if (fcm.isAvailable()) {
+          void fcm.register().then((token) => {
+            if (token) {
+              void registerDeviceToken(token);
+            }
+          });
+        }
+      });
+    }
+  }, []);
+
   const { messages, sendMessage, status } = useChat({
     id: threadId,
     messages: initialMessages,
     transport,
     onError: (error) => toast.error("Jarvis hit an error", { description: error.message }),
-    onFinish: () => {
+    onFinish: ({ responseMessage }) => {
       void queryClient.invalidateQueries({ queryKey: ["threads"] });
       void queryClient.invalidateQueries({ queryKey: ["workspace"] });
+
+      // Trigger FCM / Browser Push Notification if user is away from window or if action/reminder occurred
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        const isAway = typeof document !== "undefined" && (document.hidden || !document.hasFocus());
+        const lastPart = responseMessage?.parts?.find((p: any) => p.type === "text") as any;
+        const text = lastPart?.text || "";
+
+        const isReminder = /reminder|remind|notification|scheduled|created|sent|task|draft/i.test(text);
+        const hasTools = responseMessage?.parts?.some((p: any) => p.type?.startsWith("tool-") || (p as any).toolInvocation);
+
+        if (isAway || isReminder || hasTools) {
+          const rawTitle = text.split("\n")[0]?.replace(/[*#_]/g, "").trim();
+          const title = isAway ? "Jarvis Answer Ready" : rawTitle || "Jarvis Assistant";
+          const body = text.replace(/[*#_]/g, "").trim() || "Your request is complete.";
+
+          import("@/features/notifications/providers/browser-provider.js").then(({ BrowserNotificationProvider }) => {
+            const provider = new BrowserNotificationProvider();
+            void provider.send({
+              id: String(Date.now()),
+              userId: "",
+              type: "system_notification",
+              title: title.slice(0, 50),
+              message: body.slice(0, 140),
+              priorityScore: 95,
+              urgency: "high",
+              isRead: false,
+              isArchived: false,
+              createdAt: new Date().toISOString(),
+            });
+          });
+        }
+      }
     },
   });
 
@@ -204,6 +255,65 @@ function ChatWindow({
       setSendingDraftId(null);
     }
   };
+
+  const isThinking = useMemo(() => {
+    if (status !== "submitted" && status !== "streaming") return false;
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg) return true;
+    if (lastMsg.role === "user") return true;
+
+    // Check if the current assistant response has generated visible text or cards yet
+    const hasVisibleContent = lastMsg.parts.some((p) => {
+      if (p.type === "text") {
+        const text = p.text?.trim() || "";
+        if (!text) return false;
+        // Check if text is not stripped by contact filter
+        const clean = text.replace(/[*#_]/g, "").trim();
+        return (
+          !clean.toLowerCase().startsWith("contact:") &&
+          !clean.toLowerCase().startsWith("contact") &&
+          !clean.toLowerCase().includes("call ")
+        );
+      }
+
+      const isToolPart =
+        p.type === "tool-invocation" ||
+        p.type.startsWith("tool-") ||
+        p.type === "dynamic-tool" ||
+        Boolean((p as any).toolInvocation) ||
+        Boolean((p as any).toolName);
+
+      if (isToolPart) {
+        const t = p as any;
+        const inv = t.toolInvocation || t;
+        const tName = (
+          inv.toolName ||
+          inv.name ||
+          t.toolName ||
+          t.name ||
+          (typeof t.type === "string" ? t.type.replace(/^tool-/, "") : "")
+        ).toLowerCase();
+
+        const isDraft = tName.includes("gmail_create_draft") || tName.includes("gmail_send");
+        const isPhone = tName.includes("contacts") || tName.includes("phone");
+
+        const input = inv.args || inv.input || t.input || {};
+        const rawOutput = inv.result ?? inv.output ?? t.output ?? t.result;
+        const draftTo = input.to || rawOutput?.to || "";
+
+        if (isDraft && draftTo) return true;
+        if (isPhone) {
+          const phoneOutputData = rawOutput?.data ?? rawOutput;
+          if (Array.isArray(phoneOutputData) && phoneOutputData.length > 0) return true;
+          if (phoneOutputData && (phoneOutputData.phone || phoneOutputData.phones)) return true;
+        }
+      }
+
+      return false;
+    });
+
+    return !hasVisibleContent;
+  }, [messages, status]);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
@@ -418,7 +528,7 @@ function ChatWindow({
             );
           })}
 
-          {status === "submitted" ? <Shimmer className="text-sm">Thinking…</Shimmer> : null}
+          {isThinking ? <Shimmer className="my-4 text-sm">Thinking…</Shimmer> : null}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>

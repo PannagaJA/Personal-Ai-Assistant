@@ -36,6 +36,53 @@ function sanitizeModelMessages(messages: any[]) {
   });
 }
 
+function generateSmartTitle(userText: string): string {
+  if (!userText || !userText.trim()) return "New conversation";
+
+  let raw = userText.trim();
+  const cleaned = raw.replace(/^(please|can you|could you|i want to|i need to|help me|kindly|hey|hi|hello|assistant)\s+/i, "").trim();
+
+  if (/send|mail|email/i.test(cleaned)) {
+    const emailMatch = raw.match(/to\s+([^\s@]+@[^\s@]+\.[^\s@]+|[a-zA-Z0-9_-]+)/i);
+    if (emailMatch && emailMatch[1]) {
+      const target = emailMatch[1].trim();
+      return `Email to ${target}`;
+    }
+    return "Email Request";
+  }
+
+  if (/call|contact|number/i.test(cleaned)) {
+    const nameMatch = cleaned.replace(/^(call|show me the numbers of|find contact|get phone for|look up)\s+/i, "").trim();
+    if (nameMatch) {
+      const formattedName = nameMatch
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+      return `Contact: ${formattedName}`;
+    }
+    return "Contact Details";
+  }
+
+  if (/notification|remind/i.test(cleaned)) {
+    return "Notification Setup";
+  }
+
+  if (/follow\s*up|who should i/i.test(cleaned)) {
+    return "Daily Follow-ups";
+  }
+
+  if (/^hi|^hello|^hey$/i.test(cleaned)) {
+    return "Greetings";
+  }
+
+  const words = cleaned.split(/\s+/).slice(0, 5);
+  const title = words
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+
+  return title.length > 40 ? title.slice(0, 40) + "..." : title;
+}
+
 export async function handleChatPost(request: Request) {
   const auth = await getUserClientFromRequest(request);
   if (!auth) return new Response("Unauthorized", { status: 401 });
@@ -69,9 +116,9 @@ export async function handleChatPost(request: Request) {
     });
     if (error) logger.error("database", "Failed to save user message", { error: error.message }, userId);
 
-    if (thread.title === "New conversation") {
-      const title = messageText(lastMessage).slice(0, 60) || "New conversation";
-      await supabase.from("chat_threads").update({ title }).eq("id", threadId);
+    if (thread.title === "New conversation" || thread.title === "Greetings") {
+      const smartTitle = generateSmartTitle(messageText(lastMessage));
+      await supabase.from("chat_threads").update({ title: smartTitle, updated_at: new Date().toISOString() }).eq("id", threadId);
     } else {
       await supabase
         .from("chat_threads")
