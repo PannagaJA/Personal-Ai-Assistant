@@ -82,7 +82,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: "auto",
-        includeAssets: ["favicon.ico", "favicon.png", "robots.txt", "icons/*.png"],
+        includeAssets: ["favicon.ico", "favicon.png", "robots.txt", "icons/*.png", "firebase-messaging-sw.js"],
         manifest: {
           name: "Jarvis — Personal AI Operating System",
           short_name: "Jarvis",

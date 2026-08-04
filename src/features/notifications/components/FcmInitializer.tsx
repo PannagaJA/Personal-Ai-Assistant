@@ -10,18 +10,28 @@ const fcmProvider = new FcmNotificationProvider();
  */
 export function FcmInitializer() {
   useEffect(() => {
-    if (!fcmProvider.isAvailable()) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
 
-    void (async () => {
+    // Check permission state
+    const checkAndRequestPermission = async () => {
       try {
-        const token = await fcmProvider.register();
-        if (token) {
-          await registerDeviceToken(token);
+        if (Notification.permission === "default") {
+          // Explicitly prompt the user for permission on load
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            const token = await fcmProvider.register();
+            if (token) await registerDeviceToken(token);
+          }
+        } else if (Notification.permission === "granted") {
+          const token = await fcmProvider.register();
+          if (token) await registerDeviceToken(token);
         }
-      } catch {
-        // Silently fail — FCM is optional
+      } catch (err) {
+        console.error("[FCM] Permission/Registration error:", err);
       }
-    })();
+    };
+
+    void checkAndRequestPermission();
   }, []);
 
   return null;

@@ -66,6 +66,35 @@ export default function NotificationsPage() {
           </div>
         </div>
 
+        {/* Notification Permission Banner if not granted */}
+        {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+            <div className="flex items-center gap-3">
+              <Bell className="size-5 text-amber-400 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Notification Permissions Required</p>
+                <p className="text-xs text-amber-300/80">
+                  {Notification.permission === "denied"
+                    ? "Notifications are blocked in your browser/app settings. Please allow notifications in site settings to receive alerts."
+                    : "Push notifications are disabled. Enable permissions to receive real-time alerts."}
+                </p>
+              </div>
+            </div>
+            {Notification.permission === "default" && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  const res = await Notification.requestPermission();
+                  if (res === "granted") window.location.reload();
+                }}
+              >
+                Enable Notifications
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Category Tabs */}
         <div className="mt-6 flex items-center gap-1 border-b border-border/40 pb-2">
           <Button
