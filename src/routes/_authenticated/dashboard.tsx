@@ -21,6 +21,7 @@ import {
   Star,
   Trash2,
   Users,
+  Zap,
 } from "lucide-react";
 import { MorningBriefCard } from "@/features/planner/components/MorningBriefCard";
 import {
@@ -111,6 +112,7 @@ export default function Dashboard() {
   const todaysFollowUps = workspace.data?.todaysFollowUps ?? [];
   const morningBrief = workspace.data?.morningBrief;
   const dailyTimeline = workspace.data?.dailyTimeline ?? [];
+  const automations = workspace.data?.automations ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -128,10 +130,16 @@ export default function Dashboard() {
               {name ? `, ${name}` : ""}.
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {todaysEvents.length} meetings · {unreadEmails.length} unread emails · {openTasks.length} open tasks
+              {todaysEvents.length} meetings · {unreadEmails.length} unread emails · {openTasks.length} open tasks · {automations.filter((a) => a.isEnabled).length} active automations
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/automations">
+                <Zap className="size-4 text-amber-400" />
+                Automations
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/planner">
                 <Sparkles className="size-4 text-primary" />

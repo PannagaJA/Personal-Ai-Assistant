@@ -76,6 +76,18 @@ import {
   plannerTimeblockTool,
   plannerSuggestTool,
 } from "@/features/planner/tools";
+import {
+  automationCreateTool,
+  automationUpdateTool,
+  automationDeleteTool,
+  automationEnableTool,
+  automationDisableTool,
+  automationListTool,
+  automationRunTool,
+  automationHistoryTool,
+  automationLogsTool,
+  automationDefaultTool,
+} from "@/features/automation/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -162,4 +174,16 @@ export function initializeToolRegistry() {
   registry.register(plannerNextTaskTool);
   registry.register(plannerTimeblockTool);
   registry.register(plannerSuggestTool);
+
+  // AI Automation Engine Tools (10 total)
+  registry.register(automationCreateTool);
+  registry.register(automationUpdateTool);
+  registry.register(automationDeleteTool);
+  registry.register(automationEnableTool);
+  registry.register(automationDisableTool);
+  registry.register(automationListTool);
+  registry.register(automationRunTool);
+  registry.register(automationHistoryTool);
+  registry.register(automationLogsTool);
+  registry.register(automationDefaultTool);
 }

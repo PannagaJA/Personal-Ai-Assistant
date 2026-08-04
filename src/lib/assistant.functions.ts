@@ -5,6 +5,7 @@ import { GoogleContactsService } from "@/features/contacts/services.server";
 import { NotesService } from "@/features/notes/services.server";
 import { FollowUpsService } from "@/features/followups/services.server";
 import { PlannerService } from "@/features/planner/services.server";
+import { AutomationService } from "@/features/automation/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
@@ -12,6 +13,7 @@ import type { GoogleContact, ListContactsOptions } from "@/features/contacts/typ
 import type { UserNote, ListNotesOptions } from "@/features/notes/types";
 import type { FollowUpItem, ListFollowUpsOptions } from "@/features/followups/types";
 import type { MorningBrief, EveningReview, DailyTimelineItem } from "@/features/planner/types";
+import type { AutomationItem, AutomationRun, ListAutomationsOptions } from "@/features/automation/types";
 
 export type TaskRow = {
   id: string;
@@ -47,7 +49,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups, morningBrief, dailyTimeline] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes, followups, morningBrief, dailyTimeline, automations] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -75,6 +77,7 @@ export async function getWorkspace() {
     FollowUpsService.listFollowUps(supabase, userId, { limit: 30 }).catch(() => []),
     PlannerService.generateMorningBrief(supabase, userId).catch(() => null),
     PlannerService.getDailyTimeline(supabase, userId).catch(() => []),
+    AutomationService.ensureDefaultAutomations(supabase, userId).catch(() => []),
   ]);
 
   const now = new Date();
@@ -123,6 +126,7 @@ export async function getWorkspace() {
     todaysFollowUps,
     morningBrief,
     dailyTimeline,
+    automations,
   };
 }
 
@@ -576,4 +580,50 @@ export async function fetchDailyTimeline() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return PlannerService.getDailyTimeline(supabase, user.id);
+}
+
+// AI Automation Engine Client Helpers
+export async function fetchAutomations(options: ListAutomationsOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.ensureDefaultAutomations(supabase, user.id);
+}
+
+export async function saveAutomation(payload: {
+  id?: string;
+  name: string;
+  description?: string;
+  isEnabled?: boolean;
+  triggerType: string;
+  triggerConfig: any;
+  conditions: any[];
+  actions: any[];
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.upsertAutomation(supabase, user.id, payload);
+}
+
+export async function toggleAutomation(data: { id: string; isEnabled: boolean }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.setAutomationEnabled(supabase, user.id, data.id, data.isEnabled);
+}
+
+export async function removeAutomation(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.deleteAutomation(supabase, user.id, id);
+}
+
+export async function triggerAutomation(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.runAutomation(supabase, user.id, id);
+}
+
+export async function fetchAutomationHistory() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return AutomationService.getExecutionHistory(supabase, user.id);
 }

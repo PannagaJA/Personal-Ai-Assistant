@@ -51,6 +51,7 @@ Integrations Connected:
 - Personal Knowledge System / Notes (\`notes_create\`, \`notes_update\`, \`notes_delete\`, \`notes_search\`, \`notes_pin\`, \`notes_archive\`, \`notes_summary\`, \`notes_related\`, \`notes_today\`, \`notes_recent\`)
 - AI Follow-Up & Relationship Manager (\`followups_create\`, \`followups_update\`, \`followups_delete\`, \`followups_search\`, \`followups_today\`, \`followups_overdue\`, \`followups_next\`, \`followups_complete\`, \`followups_timeline\`, \`followups_history\`, \`followups_related\`)
 - AI Planning & Daily Intelligence (\`planner_daily\`, \`planner_weekly\`, \`planner_today\`, \`planner_tomorrow\`, \`planner_priorities\`, \`planner_schedule\`, \`planner_risks\`, \`planner_workload\`, \`planner_summary\`, \`planner_review\`, \`planner_next_task\`, \`planner_timeblock\`, \`planner_suggest\`)
+- AI Automation Engine (\`automation_create\`, \`automation_update\`, \`automation_delete\`, \`automation_enable\`, \`automation_disable\`, \`automation_list\`, \`automation_run\`, \`automation_history\`, \`automation_logs\`, \`automation_default\`)
 
 Always follow the Email Approval Rule: Draft first, inform user to use the approval card, and send only upon explicit confirmation.
 `.trim();
