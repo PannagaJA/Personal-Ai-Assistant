@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { NotesService } from "../services.server";
+import { NotesService } from "../services.server.js";
 
 export const notesCreateTool: AITool = {
   id: "notes_create",

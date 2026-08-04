@@ -6,8 +6,8 @@ import type {
   UrgencyLevel,
   ListNotificationsOptions,
   NotificationPreference,
-} from "./types";
-import { NotificationProviderRegistry } from "./providers/provider-registry";
+} from "./types.js";
+import { NotificationProviderRegistry } from "./providers/provider-registry.js";
 
 export class NotificationService {
   /**

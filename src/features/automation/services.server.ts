@@ -11,7 +11,7 @@ import type {
   TriggerConfig,
   ConditionConfig,
   ActionConfig,
-} from "./types";
+} from "./types.js";
 
 export class AutomationService {
   /**

@@ -1,4 +1,4 @@
-import type { GoogleContact } from "../types";
+import type { GoogleContact } from "../types.js";
 
 export function getPrimaryName(contact: GoogleContact): string {
   if (contact.names && contact.names.length > 0) {

@@ -1,6 +1,6 @@
-import type { INotificationProvider, NotificationItem } from "../types";
-import { BrowserNotificationProvider } from "./browser-provider";
-import { FcmNotificationProvider } from "./fcm-provider";
+import type { INotificationProvider, NotificationItem } from "../types.js";
+import { BrowserNotificationProvider } from "./browser-provider.js";
+import { FcmNotificationProvider } from "./fcm-provider.js";
 
 export class NotificationProviderRegistry {
   private static instance: NotificationProviderRegistry;

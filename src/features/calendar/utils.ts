@@ -1,4 +1,4 @@
-import type { CalendarEvent, FreeTimeSlot } from "./types";
+import type { CalendarEvent, FreeTimeSlot } from "./types.js";
 
 export function formatEventTime(evt: CalendarEvent): string {
   if (evt.isAllDay || evt.start.date) {

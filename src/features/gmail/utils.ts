@@ -1,4 +1,4 @@
-import type { GmailMessage } from "./types";
+import type { GmailMessage } from "./types.js";
 
 export function decodeBase64Url(input: string): string {
   try {

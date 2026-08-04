@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GoogleAuthService } from "../../services/google-auth.server.js";
 import { logger } from "../../services/logger.js";
-import type { GoogleContact, ListContactsOptions } from "./types";
-import { getPrimaryEmail, getPrimaryName, getPrimaryOrganization, getPrimaryPhone } from "./utils";
+import type { GoogleContact, ListContactsOptions } from "./types.js";
+import { getPrimaryEmail, getPrimaryName, getPrimaryOrganization, getPrimaryPhone } from "./utils/index.js";
 
 const PERSON_FIELDS = "names,emailAddresses,phoneNumbers,organizations,addresses,birthdays,photos,biographies,userDefined,memberships";
 

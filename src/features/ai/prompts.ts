@@ -1,4 +1,4 @@
-import type { AIContext } from "./context-builder";
+import type { AIContext } from "./context-builder.js";
 
 export const systemPrompt = (context: AIContext): string => `
 You are Jarvis, a single user's personal AI operating system: chief of staff, second brain, and executive assistant.

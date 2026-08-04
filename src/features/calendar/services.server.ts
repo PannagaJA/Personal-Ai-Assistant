@@ -7,8 +7,8 @@ import type {
   ConflictResult,
   CreateEventInput,
   UpdateEventInput,
-} from "./types";
-import { calculateFreeSlots } from "./utils";
+} from "./types.js";
+import { calculateFreeSlots } from "./utils.js";
 
 export class GoogleCalendarService {
   private static async fetchGoogleCalendarApi(

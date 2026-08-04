@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { AITool } from "../ai/tools/registry.js";
-import { GmailService } from "./services.server";
-import { extractSenderName } from "./utils";
+import { GmailService } from "./services.server.js";
+import { extractSenderName } from "./utils.js";
 
 export const listUnreadGmailTool: AITool = {
   id: "gmail_list_unread",

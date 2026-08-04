@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { PlannerService } from "../services.server";
+import { PlannerService } from "../services.server.js";
 
 export const plannerDailyTool: AITool = {
   id: "planner_daily",

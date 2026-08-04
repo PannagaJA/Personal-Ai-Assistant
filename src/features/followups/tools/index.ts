@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { FollowUpsService } from "../services.server";
+import { FollowUpsService } from "../services.server.js";
 
 export const followupsCreateTool: AITool = {
   id: "followups_create",

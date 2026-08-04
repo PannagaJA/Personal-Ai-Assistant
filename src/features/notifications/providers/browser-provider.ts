@@ -1,4 +1,4 @@
-import type { INotificationProvider, NotificationItem } from "../types";
+import type { INotificationProvider, NotificationItem } from "../types.js";
 
 export class BrowserNotificationProvider implements INotificationProvider {
   public id = "browser" as const;

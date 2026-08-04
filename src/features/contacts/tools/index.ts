@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { GoogleContactsService } from "../services.server";
-import { getPrimaryEmail, getPrimaryName, getPrimaryOrganization, getPrimaryPhone } from "../utils";
-import type { GoogleContact } from "../types";
+import { GoogleContactsService } from "../services.server.js";
+import { getPrimaryEmail, getPrimaryName, getPrimaryOrganization, getPrimaryPhone } from "../utils/index.js";
+import type { GoogleContact } from "../types.js";
 
 export const contactsSearchTool: AITool = {
   id: "contacts_search",

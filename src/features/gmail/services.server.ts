@@ -8,12 +8,12 @@ import type {
   CreateDraftInput,
   ReplyInput,
   ListMessagesOptions,
-} from "./types";
+} from "./types.js";
 import {
   extractHeader,
   parseMessagePayload,
   encodeBase64Url,
-} from "./utils";
+} from "./utils.js";
 
 export class GmailService {
   private static async fetchGmailApi(

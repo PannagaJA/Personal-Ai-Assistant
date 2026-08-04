@@ -9,8 +9,8 @@ import type {
   TimelineEvent,
   FollowUpPriority,
   FollowUpStatus,
-} from "./types";
-import { calculateRelationshipHealthScore, isOverdue } from "./utils";
+} from "./types.js";
+import { calculateRelationshipHealthScore, isOverdue } from "./utils/index.js";
 
 export class FollowUpsService {
   /**

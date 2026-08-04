@@ -13,12 +13,12 @@ import type {
   DailyTimelineItem,
   RiskAlert,
   PlannerOptions,
-} from "./types";
+} from "./types.js";
 import {
   calculateTaskPriorityScore,
   calculateFollowUpPriorityScore,
   detectRiskAlerts,
-} from "./utils/priority-algorithm";
+} from "./utils/priority-algorithm.js";
 
 export class PlannerService {
   /**

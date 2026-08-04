@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { NotificationService } from "../services.server";
+import { NotificationService } from "../services.server.js";
 
 export const notificationsListTool: AITool = {
   id: "notifications_list",

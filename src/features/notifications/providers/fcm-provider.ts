@@ -1,5 +1,5 @@
 import { getToken, onMessage } from "firebase/messaging";
-import type { INotificationProvider, NotificationItem } from "../types";
+import type { INotificationProvider, NotificationItem } from "../types.js";
 import { getFirebaseMessaging } from "../../../lib/firebase.js";
 import { logger } from "../../../services/logger.js";
 

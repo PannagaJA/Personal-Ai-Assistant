@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AITool } from "../../ai/tools/registry.js";
-import { AutomationService } from "../services.server";
+import { AutomationService } from "../services.server.js";
 
 export const automationCreateTool: AITool = {
   id: "automation_create",

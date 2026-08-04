@@ -1,12 +1,12 @@
 import { z } from "zod";
 import type { AITool } from "../ai/tools/registry.js";
-import { GoogleCalendarService } from "./services.server";
+import { GoogleCalendarService } from "./services.server.js";
 import {
   getStartOfDayIso,
   getEndOfDayIso,
   getStartOfWeekIso,
   getEndOfWeekIso,
-} from "./utils";
+} from "./utils.js";
 
 export const listTodayEventsTool: AITool = {
   id: "calendar_list_today",
