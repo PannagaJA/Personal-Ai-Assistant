@@ -15,13 +15,36 @@ interface ContactCallCardProps {
 }
 
 export function ContactCallCard({ name, phones, phone, type = "Mobile", photoUrl }: ContactCallCardProps) {
-  const phoneList: PhoneEntry[] =
+  const rawList: PhoneEntry[] =
     phones && phones.length > 0
       ? phones
       : phone
       ? [{ type, value: phone }]
       : [];
 
+  // Deduplicate and clean phone values by digits
+  const phoneMap = new Map<string, PhoneEntry>();
+  for (const item of rawList) {
+    if (!item || !item.value) continue;
+    // Strip markdown links and tel: prefixes
+    const cleanVal = item.value
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/tel:[^\s)]*/gi, "")
+      .replace(/[\[\]()]/g, "")
+      .trim();
+
+    const cleanDigits = cleanVal.replace(/[^0-9+]/g, "");
+    if (!cleanDigits) continue;
+
+    if (!phoneMap.has(cleanDigits)) {
+      phoneMap.set(cleanDigits, {
+        type: item.type || "Mobile",
+        value: cleanVal || cleanDigits,
+      });
+    }
+  }
+
+  const phoneList = Array.from(phoneMap.values());
   const primaryPhone = phoneList[0]?.value || phone || "";
   const cleanPrimary = primaryPhone.replace(/[^0-9+]/g, "");
 

@@ -271,8 +271,9 @@ function ChatWindow({
                       const remainingLines: string[] = [];
 
                       for (const line of lines) {
-                        // Strip emojis, markdown symbols, and bullets
-                        const clean = line.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}[*#_•]/gu, "").trim();
+                        // Strip markdown links, emojis, markdown symbols, and bullets
+                        const lineWithoutMd = line.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/tel:[^\s)]*/gi, "");
+                        const clean = lineWithoutMd.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}[*#_•]/gu, "").trim();
                         if (!clean) continue;
 
                         const contactMatch = clean.match(/^contact:\s*(.+)$/i);
@@ -286,14 +287,19 @@ function ChatWindow({
                           parsedName = titleNameMatch[1].trim();
                         } else if (phoneMatch) {
                           const pType = phoneMatch[1].charAt(0).toUpperCase() + phoneMatch[1].slice(1).toLowerCase();
-                          const pVal = phoneMatch[2].replace(/^call\s+/i, "").trim();
-                          if (!parsedPhones.some((p) => p.value === pVal)) {
+                          const pVal = phoneMatch[2]
+                            .replace(/^call\s+/i, "")
+                            .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+                            .replace(/[\[\]()]/g, "")
+                            .trim();
+                          if (pVal && !parsedPhones.some((p) => p.value === pVal)) {
                             parsedPhones.push({ type: pType, value: pVal });
                           }
                         } else if (numMatches && (clean.toLowerCase().includes("call") || parsedName)) {
                           numMatches.forEach((num) => {
-                            if (!parsedPhones.some((p) => p.value === num)) {
-                              parsedPhones.push({ type: "Mobile", value: num });
+                            const cleanNum = num.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/[\[\]()]/g, "").trim();
+                            if (cleanNum && !parsedPhones.some((p) => p.value === cleanNum)) {
+                              parsedPhones.push({ type: "Mobile", value: cleanNum });
                             }
                           });
                         } else {
