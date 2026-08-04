@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && esbuild api/chat.ts --bundle --platform=node --target=node20 --format=esm --packages=external --outfile=api/chat.js",
+    "build": "vite build && npx esbuild api/chat.ts --bundle --platform=node --target=node20 --format=esm --packages=external --outfile=api/chat.js",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
