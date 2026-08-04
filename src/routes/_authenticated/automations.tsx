@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Zap, Plus, Search, Play, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Zap, Plus, Search, Play, CheckCircle2, AlertCircle, RefreshCw, Eye } from "lucide-react";
 import { useAutomations, useAutomationHistory } from "@/features/automation/hooks/use-automations";
 import { AutomationCard } from "@/features/automation/components/AutomationCard";
+import { ExecutionDetailsModal } from "@/features/automation/components/ExecutionDetailsModal";
+import type { AutomationRun } from "@/features/automation/types";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AutomationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "active" | "history">("all");
+  const [selectedRun, setSelectedRun] = useState<AutomationRun | null>(null);
 
   const queryOpts: any = { query: searchQuery };
   if (activeTab === "active") queryOpts.isEnabled = true;
@@ -101,9 +104,20 @@ export default function AutomationsPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant={run.status === "success" ? "outline" : "destructive"}>
-                      {run.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px] gap-1"
+                        onClick={() => setSelectedRun(run)}
+                      >
+                        <Eye className="size-3" />
+                        View Output
+                      </Button>
+                      <Badge variant={run.status === "success" ? "outline" : "destructive"}>
+                        {run.status}
+                      </Badge>
+                    </div>
                   </div>
                 ))
               )}
@@ -155,6 +169,12 @@ export default function AutomationsPage() {
           )}
         </div>
       </div>
+
+      <ExecutionDetailsModal
+        run={selectedRun}
+        isOpen={Boolean(selectedRun)}
+        onClose={() => setSelectedRun(null)}
+      />
     </AppShell>
   );
 }
