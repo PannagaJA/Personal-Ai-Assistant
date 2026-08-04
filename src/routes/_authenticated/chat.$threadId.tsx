@@ -231,89 +231,186 @@ function ChatWindow({
             </div>
           ) : null}
 
-          {messages.map((message) => (
-            <Message from={message.role} key={message.id}>
-              <MessageContent
-                className={cn(
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-transparent p-0",
-                )}
-              >
-                {message.parts.map((part, index) => {
-                  if (part.type === "text") {
-                    return message.role === "user" ? (
-                      <p key={index} className="text-sm whitespace-pre-wrap">
-                        {part.text}
-                      </p>
-                    ) : (
-                      <MessageResponse key={index}>{part.text}</MessageResponse>
-                    );
-                  }
-                  if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-                    const toolPart = part as unknown as {
-                      type: `tool-${string}`;
-                      state: "input-streaming" | "input-available" | "output-available" | "output-error";
-                      input?: any;
-                      output?: any;
-                      errorText?: string;
-                    };
+          {messages.map((message) => {
+            const hasPhoneResults = message.parts.some((p) => {
+              const t = p as any;
+              const inv = t.toolInvocation || t;
+              const tName = (inv.toolName || inv.name || t.toolName || t.name || t.type?.replace(/^tool-/, "") || "").toLowerCase();
+              const isP =
+                tName.includes("contacts") ||
+                tName.includes("phone") ||
+                tName.includes("contact");
+              const output = inv.result?.data || inv.result || inv.output?.data || inv.output || t.output?.data || t.output;
+              return isP && output;
+            });
 
-                    const isDraftTool =
-                      toolPart.type === "tool-gmail_create_draft" ||
-                      toolPart.type === "tool-gmail_send";
+            return (
+              <Message from={message.role} key={message.id}>
+                <MessageContent
+                  className={cn(
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-transparent p-0",
+                  )}
+                >
+                  {message.parts.map((part, index) => {
+                    if (part.type === "text") {
+                      if (message.role === "user") {
+                        return (
+                          <p key={index} className="text-sm whitespace-pre-wrap">
+                            {part.text}
+                          </p>
+                        );
+                      }
 
-                    const isPhoneTool =
-                      toolPart.type === "tool-contacts_phone" ||
-                      toolPart.type === "tool-contacts_search" ||
-                      toolPart.type === "tool-contacts_details";
+                      // Parse text to see if it contains contact details (e.g. Ritesh Amc – Phone Numbers or Mobile: 866-014-4040)
+                      const text = part.text || "";
+                      const lines = text.split("\n");
+                      let parsedName = "";
+                      const parsedPhones: Array<{ type: string; value: string }> = [];
+                      const remainingLines: string[] = [];
 
-                    const draftInput = toolPart.input ?? {};
-                    const draftTo = draftInput.to || toolPart.output?.to || "";
-                    const draftSubject = draftInput.subject || toolPart.output?.subject || "";
-                    const draftBody = draftInput.body || toolPart.output?.body || "";
+                      for (const line of lines) {
+                        // Strip emojis, markdown symbols, and bullets
+                        const clean = line.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}[*#_•]/gu, "").trim();
+                        if (!clean) continue;
 
-                    const phoneOutputData = toolPart.output?.data;
-                    const phoneResults: Array<{ name: string; phone: string; type?: string }> = Array.isArray(phoneOutputData)
-                      ? phoneOutputData.filter((r) => r && (r.phone || r.phones))
-                      : phoneOutputData && (phoneOutputData.phone || phoneOutputData.phones)
-                      ? [phoneOutputData]
-                      : [];
+                        const contactMatch = clean.match(/^contact:\s*(.+)$/i);
+                        const titleNameMatch = clean.match(/^(.+?)\s*[–\-—]\s*(phone|contact|number)s?/i);
+                        const phoneMatch = clean.match(/(mobile|work|home|phone|cell):\s*(.+)/i);
+                        const numMatches = clean.match(/\+?\d{1,4}[-\s]?\d{3,5}[-\s]?\d{4,5}|\b\d{10}\b/g);
 
-                    return (
-                      <div key={index} className="space-y-2">
-                        {isDraftTool && draftTo ? (
-                          <EmailDraftApprovalCard
-                            to={draftTo}
-                            subject={draftSubject}
-                            body={draftBody}
-                            onApproveSend={(newTo, newSubject, newBody) =>
-                              handleApproveSend(newTo, newSubject, newBody, `${message.id}-${index}`)
+                        if (contactMatch) {
+                          parsedName = contactMatch[1].trim();
+                        } else if (titleNameMatch) {
+                          parsedName = titleNameMatch[1].trim();
+                        } else if (phoneMatch) {
+                          const pType = phoneMatch[1].charAt(0).toUpperCase() + phoneMatch[1].slice(1).toLowerCase();
+                          const pVal = phoneMatch[2].replace(/^call\s+/i, "").trim();
+                          if (!parsedPhones.some((p) => p.value === pVal)) {
+                            parsedPhones.push({ type: pType, value: pVal });
+                          }
+                        } else if (numMatches && (clean.toLowerCase().includes("call") || parsedName)) {
+                          numMatches.forEach((num) => {
+                            if (!parsedPhones.some((p) => p.value === num)) {
+                              parsedPhones.push({ type: "Mobile", value: num });
                             }
-                            onEdit={() => handleEditDraft(draftTo, draftSubject)}
-                            isSending={sendingDraftId === `${message.id}-${index}`}
-                            isSent={sentDraftIds.has(`${message.id}-${index}`)}
-                          />
-                        ) : null}
+                          });
+                        } else {
+                          remainingLines.push(line);
+                        }
+                      }
 
-                        {isPhoneTool && phoneResults.length > 0
-                          ? phoneResults.map((res, pIdx) => (
-                              <ContactCallCard
-                                key={pIdx}
-                                name={res.name || "Contact"}
-                                phone={res.phone || (res as any).phones?.[0]?.value || ""}
-                                type={(res as any).type || "Mobile"}
-                              />
-                            ))
-                          : null}
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-              </MessageContent>
-            </Message>
-          ))}
+                      const hasContactInfo = Boolean(parsedName) || parsedPhones.length > 0;
+                      const remainingText = remainingLines.join("\n").trim();
+
+                      return (
+                        <div key={index} className="space-y-2">
+                          {remainingText ? <MessageResponse>{remainingText}</MessageResponse> : null}
+                          {hasContactInfo ? (
+                            <ContactCallCard
+                              name={parsedName || "Contact"}
+                              phones={parsedPhones}
+                              phone={parsedPhones[0]?.value}
+                            />
+                          ) : null}
+                        </div>
+                      );
+                    }
+
+                    const isToolPart =
+                      part.type === "tool-invocation" ||
+                      part.type.startsWith("tool-") ||
+                      part.type === "dynamic-tool" ||
+                      Boolean((part as any).toolInvocation) ||
+                      Boolean((part as any).toolName);
+
+                    if (isToolPart) {
+                      const t = part as any;
+                      const inv = t.toolInvocation || t;
+                      const tName = (
+                        inv.toolName ||
+                        inv.name ||
+                        t.toolName ||
+                        t.name ||
+                        (typeof t.type === "string" ? t.type.replace(/^tool-/, "") : "")
+                      ).toLowerCase();
+
+                      const isDraftTool =
+                        tName.includes("gmail_create_draft") ||
+                        tName.includes("gmail_send");
+
+                      const isPhoneTool =
+                        tName.includes("contacts_phone") ||
+                        tName.includes("get_contact_phone") ||
+                        tName.includes("contacts_search") ||
+                        tName.includes("search_contacts") ||
+                        tName.includes("contacts_details") ||
+                        tName.includes("get_contact_details") ||
+                        tName.includes("contact");
+
+                      const input = inv.args || inv.input || t.input || {};
+                      const rawOutput = inv.result ?? inv.output ?? t.output ?? t.result;
+                      const phoneOutputData = rawOutput?.data ?? rawOutput;
+
+                      const draftTo = input.to || rawOutput?.to || "";
+                      const draftSubject = input.subject || rawOutput?.subject || "";
+                      const draftBody = input.body || rawOutput?.body || "";
+
+                      const phoneResults: Array<{ name: string; phone?: string; phones?: Array<{ type: string; value: string }> }> = [];
+                      if (Array.isArray(phoneOutputData)) {
+                        phoneResults.push(...phoneOutputData.filter((r) => r && (r.name || r.phone || r.phones)));
+                      } else if (phoneOutputData && (phoneOutputData.name || phoneOutputData.phone || phoneOutputData.phones)) {
+                        phoneResults.push(phoneOutputData);
+                      }
+
+                      // Fallback: if phone tool was invoked, extract phone numbers directly to guarantee card display
+                      if (isPhoneTool && phoneResults.length === 0) {
+                        const targetName = input.name || "Contact";
+                        const matches = (message.parts.map((p: any) => p.text).join(" ") || "").match(/\b\d{5}[-\s]?\d{5}\b|\b\d{10}\b/g);
+                        if (matches && matches.length > 0) {
+                          phoneResults.push({
+                            name: targetName,
+                            phones: Array.from(new Set(matches)).map((val) => ({ type: "Mobile", value: val })),
+                          });
+                        }
+                      }
+
+                      return (
+                        <div key={index} className="space-y-2">
+                          {isDraftTool && draftTo ? (
+                            <EmailDraftApprovalCard
+                              to={draftTo}
+                              subject={draftSubject}
+                              body={draftBody}
+                              onApproveSend={(newTo, newSubject, newBody) =>
+                                handleApproveSend(newTo, newSubject, newBody, `${message.id}-${index}`)
+                              }
+                              onEdit={() => handleEditDraft(draftTo, draftSubject)}
+                              isSending={sendingDraftId === `${message.id}-${index}`}
+                              isSent={sentDraftIds.has(`${message.id}-${index}`)}
+                            />
+                          ) : null}
+
+                          {isPhoneTool && phoneResults.length > 0
+                            ? phoneResults.map((res, pIdx) => (
+                                <ContactCallCard
+                                  key={pIdx}
+                                  name={res.name || "Contact"}
+                                  phone={res.phone}
+                                  phones={res.phones}
+                                />
+                              ))
+                            : null}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </MessageContent>
+              </Message>
+            );
+          })}
 
           {status === "submitted" ? <Shimmer className="text-sm">Thinking…</Shimmer> : null}
         </ConversationContent>

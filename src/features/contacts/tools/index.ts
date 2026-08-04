@@ -112,11 +112,21 @@ export const contactsPhoneTool: AITool = {
         return { success: false, message: `No contact found for "${name}".` };
       }
 
-      const results = matches.map((c) => ({
-        name: getPrimaryName(c),
-        phone: getPrimaryPhone(c),
-        allPhones: c.phones?.map((p) => p.value) || [],
-      })).filter((r) => r.phone);
+      const results = matches
+        .map((c) => {
+          const primary = getPrimaryPhone(c);
+          const phones = c.phones?.map((p) => ({
+            type: p.type || "Mobile",
+            value: p.value,
+          })) || (primary ? [{ type: "Mobile", value: primary }] : []);
+
+          return {
+            name: getPrimaryName(c),
+            phone: primary,
+            phones,
+          };
+        })
+        .filter((r) => r.phone || r.phones.length > 0);
 
       if (results.length === 0) {
         return { success: false, message: `Found contact for "${name}" but no phone number is on record.` };
