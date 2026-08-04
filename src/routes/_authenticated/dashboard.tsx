@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   ArrowUpRight,
+  BookOpen,
   Brain,
   Calendar as CalendarIcon,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   Clock,
   Loader2,
   Mail,
+  Pin,
   Plus,
   Sparkles,
   Star,
@@ -98,6 +100,9 @@ export default function Dashboard() {
   const contacts = workspace.data?.contacts ?? [];
   const favoriteContacts = workspace.data?.favoriteContacts ?? [];
   const frequentlyContacted = workspace.data?.frequentlyContacted ?? [];
+  const notes = workspace.data?.notes ?? [];
+  const pinnedNotes = workspace.data?.pinnedNotes ?? [];
+  const recentNotes = workspace.data?.recentNotes ?? [];
   const name = workspace.data?.profile?.display_name?.split(" ")[0];
 
   return (
@@ -425,6 +430,73 @@ export default function Dashboard() {
                           </Link>
                         );
                       })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Knowledge System & Notes Widget */}
+            <section className="glass-panel rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="size-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Knowledge System & Notes</h2>
+                </div>
+                <Link to="/notes" className="text-xs text-primary hover:underline">
+                  View all ({notes.length})
+                </Link>
+              </div>
+
+              {notes.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  No notes saved yet. Create a note or ask Jarvis to remember architecture & decisions.
+                </p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {pinnedNotes.length > 0 ? (
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
+                        <Pin className="size-3 text-primary" /> Pinned Knowledge
+                      </p>
+                      <div className="space-y-1.5">
+                        {pinnedNotes.slice(0, 3).map((note) => (
+                          <Link
+                            key={note.id}
+                            to="/notes"
+                            className="flex items-start justify-between rounded-md bg-accent/40 px-2.5 py-2 text-xs transition hover:bg-accent/70"
+                          >
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="truncate font-semibold text-foreground">{note.title}</p>
+                              <p className="line-clamp-1 text-muted-foreground">{note.summary || note.content}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] shrink-0">
+                              {note.category}
+                            </Badge>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Recent Notes
+                    </p>
+                    <div className="space-y-1.5">
+                      {recentNotes.slice(0, 3).map((note) => (
+                        <Link
+                          key={note.id}
+                          to="/notes"
+                          className="flex items-center justify-between rounded-md bg-accent/30 px-2.5 py-1.5 text-xs transition hover:bg-accent/60"
+                        >
+                          <div className="min-w-0 flex-1 pr-2">
+                            <p className="truncate font-medium text-foreground">{note.title}</p>
+                            <p className="truncate text-muted-foreground">{note.category}</p>
+                          </div>
+                          <span className="text-[10px] text-primary hover:underline shrink-0">Read</span>
+                        </Link>
+                      ))}
                     </div>
                   </div>
                 </div>

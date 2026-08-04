@@ -108,3 +108,28 @@ searchRegistry.register({
     }));
   },
 });
+
+// 4. Notes & Personal Knowledge Search Provider
+searchRegistry.register({
+  name: "notes",
+  async search(supabase, userId, query) {
+    const like = `%${query}%`;
+    const { data } = await (supabase.from as any)("user_notes")
+      .select("id, title, content, summary, category, tags, created_at")
+      .eq("user_id", userId)
+      .eq("is_archived", false)
+      .or(`title.ilike.${like},content.ilike.${like},summary.ilike.${like},category.ilike.${like}`)
+      .order("updated_at", { ascending: false })
+      .limit(8);
+
+    return (data ?? []).map((note: any) => ({
+      id: note.id,
+      module: "notes",
+      title: note.title,
+      subtitle: `Category: ${note.category} ${note.tags && note.tags.length > 0 ? `| Tags: #${note.tags.join(" #")}` : ""}`,
+      content: note.summary || note.content.slice(0, 100),
+      url: `/notes`,
+      createdAt: note.created_at,
+    }));
+  },
+});

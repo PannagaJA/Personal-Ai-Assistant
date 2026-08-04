@@ -36,6 +36,18 @@ import {
   contactsFavoriteTool,
   contactsDetailsTool,
 } from "@/features/contacts/tools";
+import {
+  notesCreateTool,
+  notesUpdateTool,
+  notesDeleteTool,
+  notesSearchTool,
+  notesPinTool,
+  notesArchiveTool,
+  notesSummaryTool,
+  notesRelatedTool,
+  notesTodayTool,
+  notesRecentTool,
+} from "@/features/notes/tools";
 
 export function initializeToolRegistry() {
   // Tasks Tools
@@ -82,4 +94,16 @@ export function initializeToolRegistry() {
   registry.register(contactsRecentTool);
   registry.register(contactsFavoriteTool);
   registry.register(contactsDetailsTool);
+
+  // Personal Knowledge System / Notes Tools (10 total)
+  registry.register(notesCreateTool);
+  registry.register(notesUpdateTool);
+  registry.register(notesDeleteTool);
+  registry.register(notesSearchTool);
+  registry.register(notesPinTool);
+  registry.register(notesArchiveTool);
+  registry.register(notesSummaryTool);
+  registry.register(notesRelatedTool);
+  registry.register(notesTodayTool);
+  registry.register(notesRecentTool);
 }

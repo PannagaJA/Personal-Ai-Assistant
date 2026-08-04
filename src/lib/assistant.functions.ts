@@ -2,10 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { GoogleCalendarService } from "@/features/calendar/services.server";
 import { GmailService } from "@/features/gmail/services.server";
 import { GoogleContactsService } from "@/features/contacts/services.server";
+import { NotesService } from "@/features/notes/services.server";
 import { getStartOfDayIso, getEndOfDayIso } from "@/features/calendar/utils";
 import type { CalendarEvent, CreateEventInput, UpdateEventInput } from "@/features/calendar/types";
 import type { CreateDraftInput, ReplyInput, ListMessagesOptions } from "@/features/gmail/types";
 import type { GoogleContact, ListContactsOptions } from "@/features/contacts/types";
+import type { UserNote, ListNotesOptions } from "@/features/notes/types";
 
 export type TaskRow = {
   id: string;
@@ -41,7 +43,7 @@ export async function getWorkspace() {
   const startToday = getStartOfDayIso();
   const endToday = getEndOfDayIso();
 
-  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes] = await Promise.all([
+  const [profile, tasks, memories, threads, calendarEvents, unreadEmails, contactsRes, notes] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar_url, timezone").eq("id", userId).maybeSingle(),
     supabase
       .from("tasks")
@@ -65,6 +67,7 @@ export async function getWorkspace() {
     GoogleCalendarService.listEvents(supabase, userId, startToday, endToday).catch(() => []),
     GmailService.listMessages(supabase, userId, { labelIds: ["UNREAD", "INBOX"], maxResults: 5 }).catch(() => ({ messages: [] })),
     GoogleContactsService.listContacts(supabase, userId, { pageSize: 50 }).catch(() => ({ contacts: [] })),
+    NotesService.listNotes(supabase, userId, { limit: 20 }).catch(() => []),
   ]);
 
   const now = new Date();
@@ -84,6 +87,9 @@ export async function getWorkspace() {
   const favoriteContacts = allContacts.filter((c) => c.isFavorite);
   const frequentlyContacted = allContacts.filter((c) => c.isFrequentlyContacted || c.lastSyncedAt);
 
+  const pinnedNotes = notes.filter((n) => n.isPinned);
+  const recentNotes = notes.slice(0, 5);
+
   return {
     profile: profile.data ?? null,
     tasks: (tasks.data ?? []) as TaskRow[],
@@ -96,6 +102,9 @@ export async function getWorkspace() {
     contacts: allContacts,
     favoriteContacts,
     frequentlyContacted,
+    notes,
+    pinnedNotes,
+    recentNotes,
   };
 }
 
@@ -435,4 +444,56 @@ export async function toggleFavoriteContact(resourceName: string, isFavorite: bo
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
   return GoogleContactsService.updateContactMetadata(supabase, user.id, resourceName, { isFavorite });
+}
+
+// Notes & Knowledge System Client Helpers
+export async function fetchNotes(options: ListNotesOptions = {}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.listNotes(supabase, user.id, options);
+}
+
+export async function getNoteDetails(noteId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.getNoteById(supabase, user.id, noteId);
+}
+
+export async function saveNote(payload: {
+  id?: string;
+  title: string;
+  content?: string;
+  category?: string;
+  tags?: string[];
+  isPinned?: boolean;
+  isArchived?: boolean;
+  isFavorite?: boolean;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.upsertNote(supabase, user.id, payload);
+}
+
+export async function removeNote(noteId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.deleteNote(supabase, user.id, noteId);
+}
+
+export async function togglePinNote(noteId: string, isPinned: boolean) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.toggleNoteState(supabase, user.id, noteId, { isPinned });
+}
+
+export async function toggleArchiveNote(noteId: string, isArchived: boolean) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.toggleNoteState(supabase, user.id, noteId, { isArchived });
+}
+
+export async function fetchNoteVersions(noteId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+  return NotesService.getNoteVersions(supabase, noteId);
 }
