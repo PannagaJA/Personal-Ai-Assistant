@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logger } from "../../services/logger.js";
 import type { UserNote, NoteVersion, ListNotesOptions, AIEntities, NoteRelationship } from "./types.js";
-import { calculateWordCount, calculateReadingTime, generateAutoSummary, extractEntitiesFromText } from "./utils.js";
+import { calculateWordCount, calculateReadingTime, generateAutoSummary, extractEntitiesFromText } from "./utils/index.js";
 
 export class NotesService {
   /**
