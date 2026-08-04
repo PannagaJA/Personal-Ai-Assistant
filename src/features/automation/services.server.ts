@@ -232,10 +232,29 @@ export class AutomationService {
       for (const action of automation.actions) {
         if (action.type === "generate_morning_brief") {
           const brief = await PlannerService.generateMorningBrief(supabase, userId);
+          const briefText = brief.summary || (brief.timelineItems?.length ? `${brief.timelineItems.length} meetings/tasks scheduled for today.` : "Your morning intelligence brief is ready!");
           results.push(`Generated Morning Brief: ${brief.summary}`);
+
+          // Dispatch high-priority FCM notification with detailed morning brief
+          await NotificationService.createNotification(supabase, userId, {
+            type: "system_notification",
+            title: "🌅 Daily Morning Brief",
+            message: briefText,
+            urgency: "high",
+            actionUrl: "/dashboard",
+          }).catch((err) => logger.warn("system", "Failed to create morning brief notification", { error: err?.message }));
         } else if (action.type === "generate_evening_review") {
           const review = await PlannerService.generateEveningReview(supabase, userId);
+          const reviewText = review.summary || "Your evening work review is complete.";
           results.push(`Generated Evening Review: ${review.summary}`);
+
+          await NotificationService.createNotification(supabase, userId, {
+            type: "system_notification",
+            title: "🌆 Evening Work Review",
+            message: reviewText,
+            urgency: "high",
+            actionUrl: "/dashboard",
+          }).catch((err) => logger.warn("system", "Failed to create evening review notification", { error: err?.message }));
         } else if (action.type === "create_task") {
           results.push(`Created automated task: ${action.title || "New Task"}`);
         } else if (action.type === "create_followup") {

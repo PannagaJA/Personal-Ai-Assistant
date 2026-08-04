@@ -163,6 +163,23 @@ export class FollowUpsService {
     }
 
     logger.info("database", `Followup saved: ${resultData.id}`, { title: payload.title }, userId);
+
+    // Create high-priority FCM / Push Notification for Follow-Up
+    const personInfo = payload.personName ? ` (${payload.personName})` : "";
+    const dateInfo = payload.followupDate ? ` Due: ${payload.followupDate}` : "";
+    await (supabase.from as any)("notifications").insert({
+      user_id: userId,
+      type: "system_notification",
+      title: `🤝 Follow-Up: ${payload.title}${personInfo}`,
+      message: `Follow-up set${personInfo}.${dateInfo}${payload.notes ? ` Notes: ${payload.notes}` : ""}`,
+      priority_score: payload.priority === "urgent" ? 95 : payload.priority === "high" ? 85 : 65,
+      urgency: payload.priority === "urgent" ? "critical" : payload.priority === "high" ? "high" : "medium",
+      is_read: false,
+      is_archived: false,
+      action_url: "/followups",
+      created_at: new Date().toISOString(),
+    }).catch(() => null);
+
     return this.mapRowToFollowUp(resultData);
   }
 
@@ -187,6 +204,20 @@ export class FollowUpsService {
 
     if (error) throw new Error(`Failed to complete followup: ${error.message}`);
     await this.recordHistory(supabase, userId, id, "completed", `Completed followup "${data.title}"`);
+
+    await (supabase.from as any)("notifications").insert({
+      user_id: userId,
+      type: "system_notification",
+      title: `✅ Completed: ${data.title}`,
+      message: `Follow-up with ${data.person_name || "contact"} has been completed.`,
+      priority_score: 40,
+      urgency: "low",
+      is_read: false,
+      is_archived: false,
+      action_url: "/followups",
+      created_at: new Date().toISOString(),
+    }).catch(() => null);
+
     return this.mapRowToFollowUp(data);
   }
 

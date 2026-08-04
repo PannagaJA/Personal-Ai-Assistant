@@ -144,7 +144,26 @@ export async function fetchCalendarEvents(timeMin: string, timeMax: string, q?: 
 export async function createCalendarEvent(input: CreateEventInput) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
-  return GoogleCalendarService.createEvent(supabase, user.id, input);
+  const evt = await GoogleCalendarService.createEvent(supabase, user.id, input);
+
+  const startStr = input.start?.dateTime
+    ? new Date(input.start.dateTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })
+    : "All Day";
+
+  await supabase.from("notifications").insert({
+    user_id: user.id,
+    type: "meeting_reminder",
+    title: `📅 Scheduled: ${input.summary}`,
+    message: `Added to Today's Schedule for ${startStr}.${input.location ? ` Location: ${input.location}` : ""}`,
+    priority_score: 85,
+    urgency: "high",
+    is_read: false,
+    is_archived: false,
+    action_url: "/dashboard",
+    created_at: new Date().toISOString(),
+  }).catch(() => null);
+
+  return evt;
 }
 
 export async function updateCalendarEvent(input: UpdateEventInput) {
@@ -156,7 +175,22 @@ export async function updateCalendarEvent(input: UpdateEventInput) {
 export async function deleteCalendarEvent(eventId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
-  return GoogleCalendarService.deleteEvent(supabase, user.id, eventId);
+  const res = await GoogleCalendarService.deleteEvent(supabase, user.id, eventId);
+
+  await supabase.from("notifications").insert({
+    user_id: user.id,
+    type: "system_notification",
+    title: `🗓️ Event Cancelled`,
+    message: `Removed event from Today's Schedule.`,
+    priority_score: 50,
+    urgency: "medium",
+    is_read: false,
+    is_archived: false,
+    action_url: "/dashboard",
+    created_at: new Date().toISOString(),
+  }).catch(() => null);
+
+  return res;
 }
 
 // Gmail Client Helpers
@@ -314,6 +348,24 @@ export async function upsertTask(data: {
     : supabase.from("tasks").insert(payload);
   const { error } = await query;
   if (error) throw new Error(error.message);
+
+  // Dispatch FCM Push Notification for new task
+  if (!data.id) {
+    const dueInfo = data.dueAt ? ` (Due: ${data.dueAt})` : "";
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      type: "overdue_task",
+      title: `📌 Task Created: ${data.title}`,
+      message: `Task added to Notification & Attention Engine.${dueInfo}`,
+      priority_score: data.priority === "high" ? 90 : 60,
+      urgency: data.priority === "high" ? "high" : "medium",
+      is_read: false,
+      is_archived: false,
+      action_url: "/dashboard",
+      created_at: new Date().toISOString(),
+    }).catch(() => null);
+  }
+
   return { ok: true };
 }
 
@@ -329,6 +381,22 @@ export async function setTaskStatus(data: { id: string; status: "open" | "done" 
     .eq("id", data.id)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
+
+  if (data.status === "done") {
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      type: "system_notification",
+      title: `🎉 Task Completed`,
+      message: `Task marked complete!`,
+      priority_score: 40,
+      urgency: "low",
+      is_read: false,
+      is_archived: false,
+      action_url: "/dashboard",
+      created_at: new Date().toISOString(),
+    }).catch(() => null);
+  }
+
   return { ok: true };
 }
 
