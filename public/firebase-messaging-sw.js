@@ -19,13 +19,14 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] Received background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'Jarvis Notification';
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'Jarvis Notification';
   const notificationOptions = {
-    body: payload.notification?.body || '',
+    body: payload.notification?.body || payload.data?.body || '',
     icon: '/favicon.ico',
     badge: '/favicon.ico',
-    data: payload.data,
+    data: payload.data || {},
     tag: payload.data?.notificationId || 'jarvis-notification',
+    renotify: true,
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

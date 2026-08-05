@@ -43,10 +43,9 @@ export class FcmNotificationProvider implements INotificationProvider {
         return null;
       }
 
-      // Register FCM service worker with a dedicated scope so it doesn't conflict with PWA sw.js
+      // Register FCM service worker at standard root scope for PWA push handling
       const registration = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js",
-        { scope: "/firebase-cloud-messaging-push-scope" }
+        "/firebase-messaging-sw.js"
       );
 
       const messaging = getFirebaseMessaging();
