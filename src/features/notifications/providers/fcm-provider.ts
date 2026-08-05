@@ -43,10 +43,13 @@ export class FcmNotificationProvider implements INotificationProvider {
         return null;
       }
 
-      // Register FCM service worker at standard root scope for PWA push handling
-      const registration = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
-      );
+      // Check if a service worker registration is already active or ready
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+          scope: "/firebase-cloud-messaging-push-scope",
+        });
+      }
 
       const messaging = getFirebaseMessaging();
       if (!messaging) return null;
