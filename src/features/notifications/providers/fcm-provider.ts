@@ -43,10 +43,17 @@ export class FcmNotificationProvider implements INotificationProvider {
         return null;
       }
 
-      // Get the existing active service worker registration from the browser
+      // Get active service worker or register firebase-messaging-sw.js
       let registration: ServiceWorkerRegistration | undefined;
       if ("serviceWorker" in navigator) {
-        registration = await navigator.serviceWorker.ready;
+        try {
+          registration = await navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js");
+          if (!registration) {
+            registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+          }
+        } catch {
+          registration = await navigator.serviceWorker.ready;
+        }
       }
 
       const messaging = getFirebaseMessaging();
